@@ -323,4 +323,33 @@ precision_rf <- sum(predicciones_rf == test$Clasificacion, na.rm = TRUE) / lengt
 print(paste("Precisión con Random Forest:", precision_rf))
 
 
+#HOJA DE TRABAJO 5
+
+# Cargar datos desde un archivo CSV
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+datos <- datos[, -1]
+
+# Instalar y cargar el paquete necesario
+install.packages("e1071")
+library(e1071)
+
+# Cargar datos desde un archivo CSV
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+datos <- datos[, -1]  # Eliminar la primera columna si es un índice
+
+# Dividir los datos en conjuntos de entrenamiento y prueba
+set.seed(123)  # Para reproducibilidad
+indices_entrenamiento <- sample(1:nrow(datos), 0.8 * nrow(datos))  # 80% para entrenamiento
+datos_entrenamiento <- datos[indices_entrenamiento, ]
+datos_prueba <- datos[-indices_entrenamiento, ]
+
+# Crear y ajustar el modelo Naive Bayes
+modelo_nb <- naiveBayes(SalePrice ~ ., data = datos_entrenamiento)
+
+# Realizar predicciones en el conjunto de prueba
+predicciones <- predict(modelo_nb, datos_prueba)
+
+# Explorar las predicciones
+print(predicciones)
+
 
