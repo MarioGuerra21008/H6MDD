@@ -369,3 +369,30 @@ print(r_squared)
 mse <- mean((predicciones - datos_imputados$SalePrice)^2)
 
 print(mse)
+
+#Inciso 5
+# Cargar el paquete necesario
+library(e1071)
+
+# 1. Preparar los datos
+# Asegúrate de que la variable de respuesta esté definida y sea de tipo factor
+datos$Clasificacion <- factor(datos$Clasificacion)
+
+# 2. Dividir los datos en conjuntos de entrenamiento y prueba (si aún no están divididos)
+set.seed(123) # Para reproducibilidad
+porcentaje_entrenamiento <- 0.7
+indices_entrenamiento <- sample(1:nrow(datos), porcentaje_entrenamiento * nrow(datos))
+train <- datos[indices_entrenamiento, ]
+test <- datos[-indices_entrenamiento, ]
+
+# 3. Entrenar el modelo de clasificación Naive Bayes
+modelo_nb <- naiveBayes(Clasificacion ~ . - SalePrice, data = train)
+
+# 4. Realizar predicciones utilizando el conjunto de prueba
+predicciones_nb <- predict(modelo_nb, newdata = test)
+
+# 5. Evaluar la precisión del modelo
+precision_nb <- mean(predicciones_nb == test$Clasificacion)
+print(paste("Precisión del modelo Naive Bayes:", precision_nb))
+
+
