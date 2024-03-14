@@ -324,32 +324,35 @@ print(paste("Precisión con Random Forest:", precision_rf))
 
 
 #HOJA DE TRABAJO 5
+# Cargar el paquete caret
+install.packages("caret")
+library(caret)
 
-# Cargar datos desde un archivo CSV
-datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
-datos <- datos[, -1]
+# Inciso 2)
+# Definir el esquema de partición para la validación cruzada
+control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
-# Instalar y cargar el paquete necesario
-install.packages("e1071")
-library(e1071)
+# Entrenar el modelo Naive Bayes
+modelo_nb <- train(SalePrice ~ ., data = datos_imputados, method = "nb", trControl = control)
 
-# Cargar datos desde un archivo CSV
-datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
-datos <- datos[, -1]  # Eliminar la primera columna si es un índice
-
-# Dividir los datos en conjuntos de entrenamiento y prueba
-set.seed(123)  # Para reproducibilidad
-indices_entrenamiento <- sample(1:nrow(datos), 0.8 * nrow(datos))  # 80% para entrenamiento
-datos_entrenamiento <- datos[indices_entrenamiento, ]
-datos_prueba <- datos[-indices_entrenamiento, ]
-
-# Crear y ajustar el modelo Naive Bayes
-modelo_nb <- naiveBayes(SalePrice ~ ., data = datos_entrenamiento)
+# Mostrar el resumen del modelo
+print(modelo_nb)
 
 # Realizar predicciones en el conjunto de prueba
-predicciones <- predict(modelo_nb, datos_prueba)
+predicciones <- predict(modelo_nb, datos_imputados)
 
 # Explorar las predicciones
 print(predicciones)
 
+
+# Calcular el error cuadrático medio (MSE)
+mse <- mean((predicciones - datos_imputados$SalePrice)^2)
+
+print(mse)
+
+# Calcular la precisión del modelo
+precision <- sum(predicciones == datos_prueba$SalePrice) / length(predicciones) * 100
+
+# Mostrar la precisión
+print(precision)
 
