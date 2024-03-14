@@ -325,6 +325,10 @@ print(paste("Precisión con Random Forest:", precision_rf))
 
 #HOJA DE TRABAJO 5
 # Cargar el paquete caret
+
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+datos <- datos[, -1]
+
 install.packages("caret")
 library(caret)
 
@@ -345,14 +349,23 @@ predicciones <- predict(modelo_nb, datos_imputados)
 print(predicciones)
 
 
-# Calcular el error cuadrático medio (MSE)
-mse <- mean((predicciones - datos_imputados$SalePrice)^2)
-
-print(mse)
-
 # Calcular la precisión del modelo
 precision <- sum(predicciones == datos_prueba$SalePrice) / length(predicciones) * 100
 
 # Mostrar la precisión
 print(precision)
 
+datos_imputados$SalePrice <- as.numeric(as.character(datos_imputados$SalePrice))
+class(datos_imputados$SalePrice)
+
+predicciones <- as.numeric(as.character(predicciones))
+
+
+r_squared <- 1 - mean((datos_imputados$SalePrice - predicciones)^2) / var(datos_imputados$SalePrice)
+print(r_squared)
+
+
+# Calcular el error cuadrático medio (MSE)
+mse <- mean((predicciones - datos_imputados$SalePrice)^2)
+
+print(mse)
