@@ -396,3 +396,32 @@ precision_nb <- mean(predicciones_nb == test$Clasificacion)
 print(paste("Precisión del modelo Naive Bayes:", precision_nb))
 
 
+#Inciso 6
+# Calcular la precisión del modelo Naive Bayes en el conjunto de prueba
+precision_nb <- mean(predicciones_nb == test$Clasificacion)
+cat("Precisión del modelo Naive Bayes:", precision_nb, "\n")
+
+# Calcular la precisión del modelo de árbol de decisión con validación cruzada en el conjunto de prueba
+precision_cruzada <- mean(predicciones_cruzadas == test$Clasificacion)
+cat("Precisión con validación cruzada:", precision_cruzada, "\n")
+
+# Calcular la precisión de los tres modelos adicionales de árbol de clasificación en el conjunto de prueba
+for (depth in c(4, 8, 12)) {
+  predicciones_clasificacion <- predict(modelo, newdata = test, type = "class")
+  precision <- sum(predicciones_clasificacion == test$Clasificacion) / length(test$Clasificacion)
+  cat("Profundidad:", depth, "Precisión del árbol de clasificación:", precision, "\n")
+}
+
+# Calcular la precisión del modelo Random Forest en el conjunto de prueba
+precision_rf <- sum(predicciones_rf == test$Clasificacion, na.rm = TRUE) / length(test$Clasificacion)
+cat("Precisión con Random Forest:", precision_rf, "\n")
+
+# Calcular el MSE y R^2 del modelo de regresión
+mse <- mean((predicciones - datos_imputados$SalePrice)^2)
+cat("Error Cuadrático Medio (MSE):", mse, "\n")
+
+r_squared <- 1 - mean((datos_imputados$SalePrice - predicciones)^2) / var(datos_imputados$SalePrice)
+cat("Coeficiente de Determinación (R^2):", r_squared, "\n")
+
+
+
