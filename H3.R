@@ -489,5 +489,24 @@ predicciones_cruzadas <- predict(modelo_nb_cv, newdata = test_imputado)
 precision_cruzada <- sum(predicciones_cruzadas == test_imputado$Clasificacion) / length(test_imputado$Clasificacion)
 print(paste("Precisión con validación cruzada:", precision_cruzada))
 
-View(datos_imputados)
-View(test_imputado)
+#Inciso 10.
+
+# Definir los parámetros a sintonizar
+grid <- expand.grid(laplace = c(0, 0.5, 1), usekernel = c(TRUE, FALSE), adjust = TRUE)
+
+# Realizar el ajuste de hiperparámetros
+modelo_tune <- train(factor(Clasificacion) ~ . - SalePrice, data = datos_sin_varianza_cero, method = "naive_bayes", trControl = control, tuneGrid = grid)
+
+# Mostrar los mejores parámetros encontrados
+print(modelo_tune)
+
+# Realizar predicciones con el modelo cruzado en el conjunto de prueba
+predicciones_cruzadas_tuneadas <- predict(modelo_tune, newdata = test_imputado)
+
+# Calcular la precisión con el modelo cruzado
+precision_cruzada_tuneada <- sum(predicciones_cruzadas_tuneadas == test_imputado$Clasificacion) / length(test_imputado$Clasificacion)
+print(paste("Precisión con validación cruzada ya tuneada:", precision_cruzada_tuneada))
+
+# Comparar el rendimiento del modelo original con el modelo ajustado
+print(paste("Precisión del modelo Naive Bayes original:", modelo_nb_cv$results$Accuracy))
+print(paste("Precisión del modelo Naive Bayes con tuneo de hiperparámetros:", modelo_tune$results$Accuracy))
