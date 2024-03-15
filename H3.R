@@ -329,28 +329,51 @@ print(paste("Precisión con Random Forest:", precision_rf))
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 datos <- datos[, -1]
 
+datos_imputados <- datos
+for (col in colnames(datos)) {
+  if (any(is.na(datos[[col]]))) {
+    datos_imputados[[col]][is.na(datos[[col]])] <- mean(datos[[col]], na.rm = TRUE)
+  }
+}
+
+print("Valores faltantes después de la imputación:")
+print(colSums(is.na(datos_imputados)))
+
+datos_imputados <- datos_imputados[, colSums(is.na(datos_imputados)) == 0]
+
+set.seed(123) # Para reproducibilidad
+porcentaje_entrenamiento <- 0.7
+indices_entrenamiento <- sample(1:nrow(datos), porcentaje_entrenamiento * nrow(datos))
+train <- datos[indices_entrenamiento, ]
+test <- datos[-indices_entrenamiento, ]
+
 install.packages("caret")
+library(ggplot2)
+library(lattice)
 library(caret)
+library(e1071)
 
 # Inciso 2)
-# Definir el esquema de partición para la validación cruzada
-control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
+modelo_nb <- naiveBayes(SalePrice ~ ., data = train)
+
+# Definir el esquema de partición para la validación cruzada
+#control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 # Entrenar el modelo Naive Bayes
-modelo_nb <- train(SalePrice ~ ., data = datos_imputados, method = "nb", trControl = control)
+#modelo_nb <- train(SalePrice ~ ., data = datos_imputados, method = "nb", trControl = control)
 
 # Mostrar el resumen del modelo
 print(modelo_nb)
 
 # Realizar predicciones en el conjunto de prueba
-predicciones <- predict(modelo_nb, datos_imputados)
+predicciones <- predict(modelo_nb, test)
 
 # Explorar las predicciones
 print(predicciones)
 
 
 # Calcular la precisión del modelo
-precision <- sum(predicciones == datos_prueba$SalePrice) / length(predicciones) * 100
+precision <- sum(predicciones == test$SalePrice) / length(predicciones) * 100
 
 # Mostrar la precisión
 print(precision)
@@ -374,9 +397,21 @@ print(mse)
 # Cargar el paquete necesario
 library(e1071)
 
+# Definir cuartiles
+cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
+
+# Crear variable respuesta
+datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
+
+# Contar el número de casas en cada categoría
+num_casas <- table(datos$Clasificacion)
+print(num_casas)
+
 # 1. Preparar los datos
 # Asegúrate de que la variable de respuesta esté definida y sea de tipo factor
 datos$Clasificacion <- factor(datos$Clasificacion)
+
+View(datos)
 
 # 2. Dividir los datos en conjuntos de entrenamiento y prueba (si aún no están divididos)
 set.seed(123) # Para reproducibilidad
@@ -386,20 +421,15 @@ train <- datos[indices_entrenamiento, ]
 test <- datos[-indices_entrenamiento, ]
 
 # 3. Entrenar el modelo de clasificación Naive Bayes
-modelo_nb <- naiveBayes(Clasificacion ~ . - SalePrice, data = train)
+modelo_nbClasificacion <- naiveBayes(Clasificacion ~ . - SalePrice, data = train)
 
 # 4. Realizar predicciones utilizando el conjunto de prueba
-predicciones_nb <- predict(modelo_nb, newdata = test)
-
-# 5. Evaluar la precisión del modelo
-precision_nb <- mean(predicciones_nb == test$Clasificacion)
-print(paste("Precisión del modelo Naive Bayes:", precision_nb))
-
+predicciones_nbClasificacion <- predict(modelo_nbClasificacion, newdata = test)
 
 #Inciso 6
 # Calcular la precisión del modelo Naive Bayes en el conjunto de prueba
-precision_nb <- mean(predicciones_nb == test$Clasificacion)
-cat("Precisión del modelo Naive Bayes:", precision_nb, "\n")
+precision_nbClasificacion <- mean(predicciones_nbClasificacion == test$Clasificacion)
+print(paste("Precisión del modelo Naive Bayes:", precision_nbClasificacion))
 
 # Calcular la precisión del modelo de árbol de decisión con validación cruzada en el conjunto de prueba
 precision_cruzada <- mean(predicciones_cruzadas == test$Clasificacion)
