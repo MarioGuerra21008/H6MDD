@@ -357,11 +357,6 @@ library(e1071)
 
 modelo_nb <- naiveBayes(SalePrice ~ ., data = train)
 
-# Definir el esquema de partición para la validación cruzada
-#control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
-# Entrenar el modelo Naive Bayes
-#modelo_nb <- train(SalePrice ~ ., data = datos_imputados, method = "nb", trControl = control)
-
 # Mostrar el resumen del modelo
 print(modelo_nb)
 
@@ -443,3 +438,56 @@ confusion_matrix <- confusionMatrix(predicciones_nbClasificacion, test$Clasifica
 
 # Mostrar matriz de confusión
 print(confusion_matrix)
+
+#Inciso 9
+
+# Definir el esquema de partición para la validación cruzada
+control <- trainControl(method = "cv", number = 10)  # 5-fold cross-validation
+
+datos_imputados <- datos
+for (col in colnames(datos)) {
+  if (any(is.na(datos[[col]]))) {
+    datos_imputados[[col]][is.na(datos[[col]])] <- mean(datos[[col]], na.rm = TRUE)
+  }
+}
+
+print("Valores faltantes después de la imputación:")
+print(colSums(is.na(datos_imputados)))
+
+datos_imputados <- datos_imputados[, colSums(is.na(datos_imputados)) == 0]
+
+porcentaje_entrenamiento <- 0.7
+indices_entrenamiento <- sample(1:nrow(datos_imputados), porcentaje_entrenamiento * nrow(datos_imputados))
+train_imputado <- datos_imputados[indices_entrenamiento, ]
+test_imputado <- datos_imputados[-indices_entrenamiento, ]
+
+# Asegurarse de que "Clasificacion" sea un factor
+datos_imputados$Clasificacion <- factor(datos_imputados$Clasificacion)
+
+# Verificar los niveles de "Clasificacion"
+levels(datos_imputados$Clasificacion)
+
+# Cargar el paquete caret
+library(caret)
+
+# Identificar las variables con varianza muy baja
+vars_con_varianza_baja <- nearZeroVar(datos_imputados)
+
+# Eliminar las variables con varianza baja del conjunto de datos
+datos_sin_varianza_cero <- datos_imputados[, -vars_con_varianza_baja]
+
+# Entrenar el modelo Naive Bayes con validación cruzada
+modelo_nb_cv <- train(factor(Clasificacion) ~ . - SalePrice, data = datos_sin_varianza_cero, method = "naive_bayes", trControl = control)
+
+# Mostrar el resumen del modelo
+print(modelo_nb_cv)
+
+# Realizar predicciones con el modelo cruzado en el conjunto de prueba
+predicciones_cruzadas <- predict(modelo_nb_cv, newdata = test_imputado)
+
+# Calcular la precisión con el modelo cruzado
+precision_cruzada <- sum(predicciones_cruzadas == test_imputado$Clasificacion) / length(test_imputado$Clasificacion)
+print(paste("Precisión con validación cruzada:", precision_cruzada))
+
+View(datos_imputados)
+View(test_imputado)
