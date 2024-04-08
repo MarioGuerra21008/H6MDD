@@ -580,8 +580,26 @@ library(ggplot2)
 library(lattice)
 
 # Crear el modelo de regresión logística
-modeloCaro <- glm(Clasificacion_Caras~., data = train, family = binomial(), maxit=100)
+modeloCaro <- glm(Clasificacion_Caras~Clasificacion, data = train, family = binomial(), maxit=100)
 
 
 #Inciso 4
 summary(modeloCaro)
+
+#Inciso 5
+
+predicciones <- predict(modeloCaro, newdata = test, type = "response")
+predicciones_binarias <- ifelse(predicciones > 0.5, 1, 0)
+
+print(predicciones_binarias)
+
+# Calcular la precisión del modelo
+precision <- mean(predicciones_binarias == test$Clasificacion_Caras)
+print(precision)
+
+#Inciso 6
+
+train_predicciones <- predict(modeloCaro, newdata = train, type = "response")
+train_predicciones_binarias <- ifelse(train_predicciones > 0.5, 1, 0)
+
+print(train_predicciones_binarias)
