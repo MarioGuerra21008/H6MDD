@@ -510,3 +510,35 @@ print(paste("Precisión con validación cruzada ya tuneada:", precision_cruzada_
 # Comparar el rendimiento del modelo original con el modelo ajustado
 print(paste("Precisión del modelo Naive Bayes original:", modelo_nb_cv$results$Accuracy))
 print(paste("Precisión del modelo Naive Bayes con tuneo de hiperparámetros:", modelo_tune$results$Accuracy))
+
+
+
+
+
+
+
+# Hoja de trabajo 6
+
+#1. Variable dicotómica
+
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+
+# Clasificar las casas en Económicas, Intermedias y Caras.
+
+# Definir cuartiles
+cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
+
+# Crear variable respuesta
+datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
+
+View(datos)
+
+# Contar el número de casas en cada categoría
+num_casas <- table(datos$Clasificacion)
+print(num_casas)
+
+#Añadir Clasificacion a los conjuntos train y test.
+
+trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
+train<-datos[trainRowsNumber,]
+test<-datos[-trainRowsNumber,]
