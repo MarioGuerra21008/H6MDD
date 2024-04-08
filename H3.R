@@ -551,23 +551,37 @@ head(datos)
 
 #Inciso 2
 
-install.packages("fastDummies")
-
 library(caret)
 library(fastDummies)
-dummy_cols(datos,  select_columns = c("Clasificacion"))
+datos <- dummy_cols(datos,  select_columns = c("Clasificacion"))
+datos$Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
+datos$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
+datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
+
+levels(datos$Clasificacion_Caras)
+levels(datos$Clasificacion_Intermedias)
+levels(datos$Clasificacion_Económicas)
+
+head(datos)
+
 porcentaje4 <- 0.70
 trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
 train<-datos[trainRowsNumber,]
 test<-datos[-trainRowsNumber,]
 set.seed(123)
 
-#Inciso 3
+head(train)
+levels(train$Clasificacion_Caras)
 
+#Inciso 3
 library(e1071)
 library(glmnet)
 library(ggplot2)
 library(lattice)
 
 # Crear el modelo de regresión logística
-modeloCaro <- glm(Cara ~ ., data = train, family = "binomial")
+modeloCaro <- glm(Clasificacion_Caras~., data = train, family = binomial(), maxit=100)
+
+
+#Inciso 4
+summary(modeloCaro)
