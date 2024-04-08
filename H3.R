@@ -537,8 +537,19 @@ View(datos)
 num_casas <- table(datos$Clasificacion)
 print(num_casas)
 
-#Añadir Clasificacion a los conjuntos train y test.
 
-trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
-train<-datos[trainRowsNumber,]
-test<-datos[-trainRowsNumber,]
+# Crear variable dicotómica para vivienda cara
+datos$Cara <- ifelse(datos$Clasificacion == "Caras", 1, 0)
+
+# Crear variable dicotómica para vivienda media
+datos$Media <- ifelse(datos$Clasificacion == "Intermedias", 1, 0)
+
+# Crear variable dicotómica para vivienda económica
+datos$Economica <- ifelse(datos$Clasificacion == "Económicas", 1, 0)
+
+# Ver los primeros registros de los datos con las nuevas variables dicotómicas
+head(datos)
+
+
+
+
