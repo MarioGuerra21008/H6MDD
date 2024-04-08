@@ -551,17 +551,21 @@ head(datos)
 
 #Inciso 2
 
+install.packages("fastDummies")
+
+library(caret)
+library(fastDummies)
+dummy_cols(datos,  select_columns = c("Clasificacion"))
 porcentaje4 <- 0.70
 trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
 train<-datos[trainRowsNumber,]
 test<-datos[-trainRowsNumber,]
-seed(123)
+set.seed(123)
 
 #Inciso 3
 
 library(e1071)
 library(glmnet)
-library(caret)
 library(ggplot2)
 library(lattice)
 
