@@ -537,7 +537,6 @@ View(datos)
 num_casas <- table(datos$Clasificacion)
 print(num_casas)
 
-
 # Crear variable dicotómica para vivienda cara
 datos$Cara <- ifelse(datos$Clasificacion == "Caras", 1, 0)
 
@@ -550,6 +549,21 @@ datos$Economica <- ifelse(datos$Clasificacion == "Económicas", 1, 0)
 # Ver los primeros registros de los datos con las nuevas variables dicotómicas
 head(datos)
 
+#Inciso 2
 
+porcentaje4 <- 0.70
+trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
+train<-datos[trainRowsNumber,]
+test<-datos[-trainRowsNumber,]
+seed(123)
 
+#Inciso 3
 
+library(e1071)
+library(glmnet)
+library(caret)
+library(ggplot2)
+library(lattice)
+
+# Crear el modelo de regresión logística
+modeloCaro <- glm(Cara ~ ., data = train, family = "binomial")
