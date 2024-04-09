@@ -1,6 +1,7 @@
 # Cargar datos desde un archivo CSV
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
+
 View(datos$MiscVal)
 
 summary(datos)
@@ -603,3 +604,26 @@ train_predicciones <- predict(modeloCaro, newdata = train, type = "response")
 train_predicciones_binarias <- ifelse(train_predicciones > 0.5, 1, 0)
 
 print(train_predicciones_binarias)
+
+
+#Inciso 7
+
+library(boot)
+
+# Definir la fórmula del modelo
+formula <- Clasificacion_Caras ~ Clasificacion
+
+# Definir el modelo
+modelo <- glm(formula, data = train, family = binomial())
+
+# Realizar la validación cruzada
+cv_modelo <- cv.glm(train, modelo)
+
+# Mostrar los resultados
+print(cv_modelo)
+
+# Seleccionar el modelo con menor error
+mejor_modelo <- cv_modelo$glm
+
+# Resumen del mejor modelo
+summary(mejor_modelo)
