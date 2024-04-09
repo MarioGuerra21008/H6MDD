@@ -606,7 +606,9 @@ train_predicciones_binarias <- ifelse(train_predicciones > 0.5, 1, 0)
 print(train_predicciones_binarias)
 
 
+#
 #Inciso 7
+#
 
 library(boot)
 
@@ -627,3 +629,33 @@ mejor_modelo <- cv_modelo$glm
 
 # Resumen del mejor modelo
 summary(mejor_modelo)
+
+
+#
+#Inciso 8
+#
+
+
+library(caret)
+
+
+matriz_confusion <- confusionMatrix(data = factor(test$Clasificacion_Caras), 
+                                    reference = factor(predicciones_binarias))
+
+
+print(matriz_confusion)
+
+
+install.packages("profvis")
+library(profvis)
+
+profvis({
+  # Calcular la matriz de confusión
+  matriz_confusion <- confusionMatrix(data = factor(test$Clasificacion_Caras), 
+                                      reference = factor(predicciones_binarias))
+})
+
+
+#
+# Inciso 9
+#
