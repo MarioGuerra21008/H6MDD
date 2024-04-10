@@ -1,7 +1,6 @@
 # Cargar datos desde un archivo CSV
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
-
 View(datos$MiscVal)
 
 summary(datos)
@@ -330,46 +329,28 @@ print(paste("Precisión con Random Forest:", precision_rf))
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 datos <- datos[, -1]
 
-datos_imputados <- datos
-for (col in colnames(datos)) {
-  if (any(is.na(datos[[col]]))) {
-    datos_imputados[[col]][is.na(datos[[col]])] <- mean(datos[[col]], na.rm = TRUE)
-  }
-}
-
-print("Valores faltantes después de la imputación:")
-print(colSums(is.na(datos_imputados)))
-
-datos_imputados <- datos_imputados[, colSums(is.na(datos_imputados)) == 0]
-
-set.seed(123) # Para reproducibilidad
-porcentaje_entrenamiento <- 0.7
-indices_entrenamiento <- sample(1:nrow(datos), porcentaje_entrenamiento * nrow(datos))
-train <- datos[indices_entrenamiento, ]
-test <- datos[-indices_entrenamiento, ]
-
 install.packages("caret")
-library(ggplot2)
-library(lattice)
 library(caret)
-library(e1071)
 
 # Inciso 2)
+# Definir el esquema de partición para la validación cruzada
+control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
-modelo_nb <- naiveBayes(SalePrice ~ ., data = train)
+# Entrenar el modelo Naive Bayes
+modelo_nb <- train(SalePrice ~ ., data = datos_imputados, method = "nb", trControl = control)
 
 # Mostrar el resumen del modelo
 print(modelo_nb)
 
 # Realizar predicciones en el conjunto de prueba
-predicciones <- predict(modelo_nb, test)
+predicciones <- predict(modelo_nb, datos_imputados)
 
 # Explorar las predicciones
 print(predicciones)
 
 
 # Calcular la precisión del modelo
-precision <- sum(predicciones == test$SalePrice) / length(predicciones) * 100
+precision <- sum(predicciones == datos_prueba$SalePrice) / length(predicciones) * 100
 
 # Mostrar la precisión
 print(precision)
@@ -389,138 +370,12 @@ mse <- mean((predicciones - datos_imputados$SalePrice)^2)
 
 print(mse)
 
-#Inciso 5
-# Cargar el paquete necesario
-library(e1071)
-
-# Definir cuartiles
-cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
-
-# Crear variable respuesta
-datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
-
-# Contar el número de casas en cada categoría
-num_casas <- table(datos$Clasificacion)
-print(num_casas)
-
-# 1. Preparar los datos
-# Asegúrate de que la variable de respuesta esté definida y sea de tipo factor
-datos$Clasificacion <- factor(datos$Clasificacion)
-
-View(datos)
-
-# 2. Dividir los datos en conjuntos de entrenamiento y prueba (si aún no están divididos)
-set.seed(123) # Para reproducibilidad
-porcentaje_entrenamiento <- 0.7
-indices_entrenamiento <- sample(1:nrow(datos), porcentaje_entrenamiento * nrow(datos))
-train <- datos[indices_entrenamiento, ]
-test <- datos[-indices_entrenamiento, ]
-
-# 3. Entrenar el modelo de clasificación Naive Bayes
-modelo_nbClasificacion <- naiveBayes(Clasificacion ~ . - SalePrice, data = train)
-
-# 4. Realizar predicciones utilizando el conjunto de prueba
-predicciones_nbClasificacion <- predict(modelo_nbClasificacion, newdata = test)
-
-View(test)
-
-#Inciso 6
-# Calcular la precisión del modelo Naive Bayes en el conjunto de prueba
-
-precision_nbClasificacion <- mean(predicciones_nbClasificacion == test$Clasificacion)
-print(paste("Precisión del modelo Naive Bayes:", precision_nbClasificacion))
-
-#Inciso 7
-
-library(caret)
-
-# Crear matriz de confusión
-confusion_matrix <- confusionMatrix(predicciones_nbClasificacion, test$Clasificacion)
-
-# Mostrar matriz de confusión
-print(confusion_matrix)
-
-#Inciso 9
-
-# Definir el esquema de partición para la validación cruzada
-control <- trainControl(method = "cv", number = 10)  # 5-fold cross-validation
-
-datos_imputados <- datos
-for (col in colnames(datos)) {
-  if (any(is.na(datos[[col]]))) {
-    datos_imputados[[col]][is.na(datos[[col]])] <- mean(datos[[col]], na.rm = TRUE)
-  }
-}
-
-print("Valores faltantes después de la imputación:")
-print(colSums(is.na(datos_imputados)))
-
-datos_imputados <- datos_imputados[, colSums(is.na(datos_imputados)) == 0]
-
-porcentaje_entrenamiento <- 0.7
-indices_entrenamiento <- sample(1:nrow(datos_imputados), porcentaje_entrenamiento * nrow(datos_imputados))
-train_imputado <- datos_imputados[indices_entrenamiento, ]
-test_imputado <- datos_imputados[-indices_entrenamiento, ]
-
-# Asegurarse de que "Clasificacion" sea un factor
-datos_imputados$Clasificacion <- factor(datos_imputados$Clasificacion)
-
-# Verificar los niveles de "Clasificacion"
-levels(datos_imputados$Clasificacion)
-
-# Cargar el paquete caret
-library(caret)
-
-# Identificar las variables con varianza muy baja
-vars_con_varianza_baja <- nearZeroVar(datos_imputados)
-
-# Eliminar las variables con varianza baja del conjunto de datos
-datos_sin_varianza_cero <- datos_imputados[, -vars_con_varianza_baja]
-
-# Entrenar el modelo Naive Bayes con validación cruzada
-modelo_nb_cv <- train(factor(Clasificacion) ~ . - SalePrice, data = datos_sin_varianza_cero, method = "naive_bayes", trControl = control)
-
-# Mostrar el resumen del modelo
-print(modelo_nb_cv)
-
-# Realizar predicciones con el modelo cruzado en el conjunto de prueba
-predicciones_cruzadas <- predict(modelo_nb_cv, newdata = test_imputado)
-
-# Calcular la precisión con el modelo cruzado
-precision_cruzada <- sum(predicciones_cruzadas == test_imputado$Clasificacion) / length(test_imputado$Clasificacion)
-print(paste("Precisión con validación cruzada:", precision_cruzada))
-
-#Inciso 10.
-
-# Definir los parámetros a sintonizar
-grid <- expand.grid(laplace = c(0, 0.5, 1), usekernel = c(TRUE, FALSE), adjust = TRUE)
-
-# Realizar el ajuste de hiperparámetros
-modelo_tune <- train(factor(Clasificacion) ~ . - SalePrice, data = datos_sin_varianza_cero, method = "naive_bayes", trControl = control, tuneGrid = grid)
-
-# Mostrar los mejores parámetros encontrados
-print(modelo_tune)
-
-# Realizar predicciones con el modelo cruzado en el conjunto de prueba
-predicciones_cruzadas_tuneadas <- predict(modelo_tune, newdata = test_imputado)
-
-# Calcular la precisión con el modelo cruzado
-precision_cruzada_tuneada <- sum(predicciones_cruzadas_tuneadas == test_imputado$Clasificacion) / length(test_imputado$Clasificacion)
-print(paste("Precisión con validación cruzada ya tuneada:", precision_cruzada_tuneada))
-
-# Comparar el rendimiento del modelo original con el modelo ajustado
-print(paste("Precisión del modelo Naive Bayes original:", modelo_nb_cv$results$Accuracy))
-print(paste("Precisión del modelo Naive Bayes con tuneo de hiperparámetros:", modelo_tune$results$Accuracy))
-
-
-
-
-
 
 
 # Hoja de trabajo 6
 
 #1. Variable dicotómica
+
 
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
@@ -550,12 +405,18 @@ datos$Economica <- ifelse(datos$Clasificacion == "Económicas", 1, 0)
 # Ver los primeros registros de los datos con las nuevas variables dicotómicas
 head(datos)
 
-#Inciso 2
+## INCISO 2
+
+install.packages("fastDummies")
 
 library(caret)
 library(fastDummies)
 datos <- dummy_cols(datos,  select_columns = c("Clasificacion"))
-datos$Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
+Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
+
+train_factor$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
+datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
+
 datos$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
 datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
 
@@ -605,7 +466,6 @@ train_predicciones_binarias <- ifelse(train_predicciones > 0.5, 1, 0)
 
 print(train_predicciones_binarias)
 
-
 #
 #Inciso 7
 #
@@ -649,10 +509,15 @@ print(matriz_confusion)
 install.packages("profvis")
 library(profvis)
 
+library(pryr)
+
 profvis({
   # Calcular la matriz de confusión
+  memoria_anterior <- mem_used()
   matriz_confusion <- confusionMatrix(data = factor(test$Clasificacion_Caras), 
                                       reference = factor(predicciones_binarias))
+  memoria_despues <- mem_used()
+  print(memoria_despues - memoria_anterior)
 })
 
 
@@ -750,7 +615,3 @@ print(paste("Árbol de decisión:", precision_arbol))
 print(paste("Random Forest:", precision_rf))
 print(paste("Naive Bayes:", precision_nb))
 print(paste("Regresión Logística:", precision_logistico))
-
-
-
-
