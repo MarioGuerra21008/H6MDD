@@ -412,11 +412,7 @@ install.packages("fastDummies")
 library(caret)
 library(fastDummies)
 datos <- dummy_cols(datos,  select_columns = c("Clasificacion"))
-Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
-
-train_factor$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
-datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
-
+datos$Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
 datos$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
 datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
 
@@ -470,64 +466,27 @@ print(train_predicciones_binarias)
 #Inciso 7
 #
 
-library(boot)
+library(caret)
 
 # Definir la fórmula del modelo
 formula <- Clasificacion_Caras ~ Clasificacion
 
-# Definir el modelo
-modelo <- glm(formula, data = train, family = binomial())
+# Definir el control de entrenamiento con validación cruzada
+control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
-# Realizar la validación cruzada
-cv_modelo <- cv.glm(train, modelo)
+# Entrenar el modelo utilizando la función train() de caret
+cv_modelo <- train(formula, data = train, method = "glm", trControl = control, family = binomial())
 
-# Mostrar los resultados
+# Verificar los resultados del modelo
 print(cv_modelo)
 
-# Seleccionar el modelo con menor error
-mejor_modelo <- cv_modelo$glm
+# Obtener el mejor modelo
+mejor_modelo <- modelo$finalModel
 
 # Resumen del mejor modelo
 summary(mejor_modelo)
 
 
-Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
-Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
-
-# Definir la fórmula del modelo para Clasificacion_Economicas
-formula_eco <- Clasificacion_Economicas ~ Clasificacion
-
-# Definir el modelo
-modelo_eco <- glm(formula_eco, data = train, family = binomial())
-
-# Realizar la validación cruzada
-cv_modelo_eco <- cv.glm(train, modelo_eco)
-
-# Mostrar los resultados
-print(cv_modelo_eco)
-
-# Seleccionar el modelo con menor error
-mejor_modelo_eco <- cv_modelo_eco$glm
-
-# Resumen del mejor modelo
-summary(mejor_modelo_eco)
-
-# Ajusta el primer modelo
-modelo_caras <- glm(Clasificacion_Caras ~ Clasificacion, data = train, family = binomial())
-
-# Usa los coeficientes de modelo_caras como valores iniciales para modelo_economicas
-# (Nota: Esta es una aproximación, ya que R no permite directamente esta funcionalidad en glm)
-# Suponiendo una funcionalidad hipotética o uso de otro software que lo permita:
-coef_iniciales <- coef(modelo_caras)
-modelo_Intermedias <- glm(Clasificacion_Intermedias ~ Clasificacion, data = train, family = binomial(), start = coef_iniciales)
-
-
-coef_inicialesEconomicas <- coef(modelo_caras)
-modelo_Economicas <- glm(Clasificacion_Económicas ~ Clasificacion, data = train, family = binomial(), start = coef_inicialesEconomicas)
-
-
-print(modelo_Intermedias)
-print(modelo_Economicas)
 
 #
 #Inciso 8
@@ -563,18 +522,22 @@ profvis({
 # Inciso 9
 #
 
-aic_caras <- AIC(modelo_caras)
-bic_caras <- BIC(modelo_caras)
+# Obtener AIC y BIC de cada modelo
+AIC_modeloCaro <- AIC(modeloCaro)
+BIC_modeloCaro <- BIC(modeloCaro)
+AIC_cv_modelo <- AIC(cv_modelo)
+BIC_cv_modelo <- BIC(cv_modelo)
+AIC_mejor_modelo <- AIC(mejor_modelo)
+BIC_mejor_modelo <- BIC(mejor_modelo)
 
-aic_intermedias <- AIC(modelo_Intermedias)
-bic_intermedias <- BIC(modelo_Intermedias)
+# Imprimir los resultados
+cat("AIC del modelo inicial:", AIC_modeloCaro, "\n")
+cat("BIC del modelo inicial:", BIC_modeloCaro, "\n")
+cat("AIC del mejor modelo:", AIC_cv_modelo, "\n")
+cat("BIC del mejor modelo:", BIC_cv_modelo, "\n")
+cat("AIC del mejor modelo económico:", AIC_mejor_modelo, "\n")
+cat("BIC del mejor modelo económico:", BIC_mejor_modelo, "\n")
 
-aic_economicas <- AIC(modelo_Economicas)
-bic_economicas <- BIC(modelo_Economicas)
-
-print(data.frame(Modelo = c("Caras", "Intermedias", "Económicas"),
-                 AIC = c(aic_caras, aic_intermedias, aic_economicas),
-                 BIC = c(bic_caras, bic_intermedias, bic_economicas)))
 
 
 #
