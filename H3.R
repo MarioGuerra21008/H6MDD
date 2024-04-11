@@ -491,6 +491,44 @@ mejor_modelo <- cv_modelo$glm
 summary(mejor_modelo)
 
 
+Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
+Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
+
+# Definir la fórmula del modelo para Clasificacion_Economicas
+formula_eco <- Clasificacion_Economicas ~ Clasificacion
+
+# Definir el modelo
+modelo_eco <- glm(formula_eco, data = train, family = binomial())
+
+# Realizar la validación cruzada
+cv_modelo_eco <- cv.glm(train, modelo_eco)
+
+# Mostrar los resultados
+print(cv_modelo_eco)
+
+# Seleccionar el modelo con menor error
+mejor_modelo_eco <- cv_modelo_eco$glm
+
+# Resumen del mejor modelo
+summary(mejor_modelo_eco)
+
+# Ajusta el primer modelo
+modelo_caras <- glm(Clasificacion_Caras ~ Clasificacion, data = train, family = binomial())
+
+# Usa los coeficientes de modelo_caras como valores iniciales para modelo_economicas
+# (Nota: Esta es una aproximación, ya que R no permite directamente esta funcionalidad en glm)
+# Suponiendo una funcionalidad hipotética o uso de otro software que lo permita:
+coef_iniciales <- coef(modelo_caras)
+modelo_Intermedias <- glm(Clasificacion_Intermedias ~ Clasificacion, data = train, family = binomial(), start = coef_iniciales)
+
+
+coef_inicialesEconomicas <- coef(modelo_caras)
+modelo_Economicas <- glm(Clasificacion_Económicas ~ Clasificacion, data = train, family = binomial(), start = coef_inicialesEconomicas)
+
+
+print(modelo_Intermedias)
+print(modelo_Economicas)
+
 #
 #Inciso 8
 #
