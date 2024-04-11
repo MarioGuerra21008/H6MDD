@@ -563,6 +563,18 @@ profvis({
 # Inciso 9
 #
 
+aic_caras <- AIC(modelo_caras)
+bic_caras <- BIC(modelo_caras)
+
+aic_intermedias <- AIC(modelo_Intermedias)
+bic_intermedias <- BIC(modelo_Intermedias)
+
+aic_economicas <- AIC(modelo_Economicas)
+bic_economicas <- BIC(modelo_Economicas)
+
+print(data.frame(Modelo = c("Caras", "Intermedias", "Económicas"),
+                 AIC = c(aic_caras, aic_intermedias, aic_economicas),
+                 BIC = c(bic_caras, bic_intermedias, bic_economicas)))
 
 
 #
