@@ -475,13 +475,15 @@ formula <- Clasificacion_Caras ~ Clasificacion
 control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
 
 # Entrenar el modelo utilizando la función train() de caret
-cv_modelo <- train(formula, data = train, method = "glm", trControl = control, family = binomial())
+cv_modelo <- train(formula, data = train, method = "glm", trControl = control,
+                family = binomial(), control = glm.control(maxit = 1000))
+
 
 # Verificar los resultados del modelo
 print(cv_modelo)
 
 # Obtener el mejor modelo
-mejor_modelo <- modelo$finalModel
+mejor_modelo <- cv_modelo$finalModel
 
 # Resumen del mejor modelo
 summary(mejor_modelo)
@@ -525,16 +527,12 @@ profvis({
 # Obtener AIC y BIC de cada modelo
 AIC_modeloCaro <- AIC(modeloCaro)
 BIC_modeloCaro <- BIC(modeloCaro)
-AIC_cv_modelo <- AIC(cv_modelo)
-BIC_cv_modelo <- BIC(cv_modelo)
 AIC_mejor_modelo <- AIC(mejor_modelo)
 BIC_mejor_modelo <- BIC(mejor_modelo)
 
 # Imprimir los resultados
 cat("AIC del modelo inicial:", AIC_modeloCaro, "\n")
 cat("BIC del modelo inicial:", BIC_modeloCaro, "\n")
-cat("AIC del mejor modelo:", AIC_cv_modelo, "\n")
-cat("BIC del mejor modelo:", BIC_cv_modelo, "\n")
 cat("AIC del mejor modelo económico:", AIC_mejor_modelo, "\n")
 cat("BIC del mejor modelo económico:", BIC_mejor_modelo, "\n")
 
