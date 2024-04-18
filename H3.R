@@ -632,6 +632,18 @@ print(paste("Regresión Logística:", precision_logistico))
 
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
+datos <- subset(datos, select = -Alley)
+
+# Identificar columnas cuantitativas y categóricas
+columnas_cuantitativas <- sapply(datos, is.numeric)
+columnas_categoricas <- sapply(datos, is.factor)
+
+# Imputar valores faltantes en variables cuantitativas con 0
+datos[, columnas_cuantitativas][is.na(datos[, columnas_cuantitativas])] <- 0
+
+# Imputar valores faltantes en variables categóricas con "Desconocido"
+datos[, columnas_categoricas][is.na(datos[, columnas_categoricas])] <- "Desconocido"
+
 # Clasificar las casas en Económicas, Intermedias y Caras.
 
 # Definir cuartiles
@@ -639,7 +651,7 @@ cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
 
 # Crear variable respuesta
 datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
-
+datos$Clasificacion <- as.factor(datos$Clasificacion)
 View(datos)
 
 porcentaje4 <- 0.70
@@ -648,5 +660,27 @@ train<-datos[trainRowsNumber,]
 test<-datos[-trainRowsNumber,]
 set.seed(123)
 
+train <- as.data.frame(lapply(train, as.factor))
+test <- as.data.frame(lapply(test, as.factor))
+
+View(train)
+
 library(e1071)
 library(caret)
+library(ggplot2)
+library(lattice)
+
+#Inciso 4
+
+modelosvm<-svm(Clasificacion~., data = train, scale = F)
+
+# Entrenamiento de modelos SVM con diferentes kernels y parámetros
+svm_linear <- svm(Clasificacion~., data = train, kernel = "linear", cost = 2^5)
+svm_radial <- svm(Clasificacion~., data = train, kernel = "radial", cost = 2^-5, gamma = 0.1)
+svm_polynomial <- svm(Clasificacion~., data = train, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
+
+#Inciso 5
+
+predictions_linear <- predict(svm_linear, test)
+predictions_radial <- predict(svm_radial, test)
+predictions_polynomial <- predict(svm_polynomial, test)
