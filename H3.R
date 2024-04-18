@@ -412,7 +412,11 @@ install.packages("fastDummies")
 library(caret)
 library(fastDummies)
 datos <- dummy_cols(datos,  select_columns = c("Clasificacion"))
-datos$Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
+Clasificacion_Caras <- as.factor(datos$Clasificacion_Caras)
+
+train_factor$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
+datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
+
 datos$Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
 datos$Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
 
@@ -466,29 +470,64 @@ print(train_predicciones_binarias)
 #Inciso 7
 #
 
-library(caret)
+library(boot)
 
 # Definir la fórmula del modelo
 formula <- Clasificacion_Caras ~ Clasificacion
 
-# Definir el control de entrenamiento con validación cruzada
-control <- trainControl(method = "cv", number = 5)  # 5-fold cross-validation
+# Definir el modelo
+modelo <- glm(formula, data = train, family = binomial())
 
-# Entrenar el modelo utilizando la función train() de caret
-cv_modelo <- train(formula, data = train, method = "glm", trControl = control,
-                family = binomial(), control = glm.control(maxit = 1000))
+# Realizar la validación cruzada
+cv_modelo <- cv.glm(train, modelo)
 
-
-# Verificar los resultados del modelo
+# Mostrar los resultados
 print(cv_modelo)
 
-# Obtener el mejor modelo
-mejor_modelo <- cv_modelo$finalModel
+# Seleccionar el modelo con menor error
+mejor_modelo <- cv_modelo$glm
 
 # Resumen del mejor modelo
 summary(mejor_modelo)
 
 
+Clasificacion_Intermedias <- as.factor(datos$Clasificacion_Intermedias)
+Clasificacion_Económicas <- as.factor(datos$Clasificacion_Económicas)
+
+# Definir la fórmula del modelo para Clasificacion_Economicas
+formula_eco <- Clasificacion_Economicas ~ Clasificacion
+
+# Definir el modelo
+modelo_eco <- glm(formula_eco, data = train, family = binomial())
+
+# Realizar la validación cruzada
+cv_modelo_eco <- cv.glm(train, modelo_eco)
+
+# Mostrar los resultados
+print(cv_modelo_eco)
+
+# Seleccionar el modelo con menor error
+mejor_modelo_eco <- cv_modelo_eco$glm
+
+# Resumen del mejor modelo
+summary(mejor_modelo_eco)
+
+# Ajusta el primer modelo
+modelo_caras <- glm(Clasificacion_Caras ~ Clasificacion, data = train, family = binomial())
+
+# Usa los coeficientes de modelo_caras como valores iniciales para modelo_economicas
+# (Nota: Esta es una aproximación, ya que R no permite directamente esta funcionalidad en glm)
+# Suponiendo una funcionalidad hipotética o uso de otro software que lo permita:
+coef_iniciales <- coef(modelo_caras)
+modelo_Intermedias <- glm(Clasificacion_Intermedias ~ Clasificacion, data = train, family = binomial(), start = coef_iniciales)
+
+
+coef_inicialesEconomicas <- coef(modelo_caras)
+modelo_Economicas <- glm(Clasificacion_Económicas ~ Clasificacion, data = train, family = binomial(), start = coef_inicialesEconomicas)
+
+
+print(modelo_Intermedias)
+print(modelo_Economicas)
 
 #
 #Inciso 8
@@ -524,18 +563,18 @@ profvis({
 # Inciso 9
 #
 
-# Obtener AIC y BIC de cada modelo
-AIC_modeloCaro <- AIC(modeloCaro)
-BIC_modeloCaro <- BIC(modeloCaro)
-AIC_mejor_modelo <- AIC(mejor_modelo)
-BIC_mejor_modelo <- BIC(mejor_modelo)
+aic_caras <- AIC(modelo_caras)
+bic_caras <- BIC(modelo_caras)
 
-# Imprimir los resultados
-cat("AIC del modelo inicial:", AIC_modeloCaro, "\n")
-cat("BIC del modelo inicial:", BIC_modeloCaro, "\n")
-cat("AIC del mejor modelo económico:", AIC_mejor_modelo, "\n")
-cat("BIC del mejor modelo económico:", BIC_mejor_modelo, "\n")
+aic_intermedias <- AIC(modelo_Intermedias)
+bic_intermedias <- BIC(modelo_Intermedias)
 
+aic_economicas <- AIC(modelo_Economicas)
+bic_economicas <- BIC(modelo_Economicas)
+
+print(data.frame(Modelo = c("Caras", "Intermedias", "Económicas"),
+                 AIC = c(aic_caras, aic_intermedias, aic_economicas),
+                 BIC = c(bic_caras, bic_intermedias, bic_economicas)))
 
 
 #
@@ -628,6 +667,8 @@ print(paste("Naive Bayes:", precision_nb))
 print(paste("Regresión Logística:", precision_logistico))
 
 
+
+
 ### HOJA DE TRABAJO 7 - SVM
 
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
@@ -672,13 +713,28 @@ library(lattice)
 
 modelosvm<-svm(Clasificacion~., data = train, scale = F)
 
-# Entrenamiento de modelos SVM con diferentes kernels y parámetros
-svm_linear <- svm(Clasificacion~., data = train, kernel = "linear", cost = 2^5)
-svm_radial <- svm(Clasificacion~., data = train, kernel = "radial", cost = 2^-5, gamma = 0.1)
-svm_polynomial <- svm(Clasificacion~., data = train, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
+# Asumiendo que 'Caras' es la variable respuesta y las otras dos son predictoras
+svmModel <- svm(Cara ~ Media + Economica, data = train_factor, type = "C-classification", kernel = "linear", cost = 1)
+
+svm_radial <- svm(Cara ~ Media + Economica, data = train, kernel = "radial", cost = 2^-5, gamma = 0.1)
+svm_polynomial <- svm(Cara ~ Media + Economica, data = train_factor, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
 
 #Inciso 5
 
-predictions_linear <- predict(svm_linear, test)
-predictions_radial <- predict(svm_radial, test)
-predictions_polynomial <- predict(svm_polynomial, test)
+
+predictions_linear <- predict(svmModel, train_factor)
+
+                      
+# Asumiendo que 'test' es tu conjunto de datos de prueba y que contiene las columnas necesarias
+predictions_radial <- predict(svm_radial, train_factor)
+
+# Mostrar las predicciones
+print(predictions_radial)
+
+# Asumiendo que 'test_factor' es tu conjunto de datos de prueba y que contiene las columnas necesarias
+predictions_polynomial <- predict(svm_polynomial, train_factor)  # Asegúrate que 'test_factor' tenga la misma estructura que 'train_factor'
+
+# Mostrar las predicciones
+print(predictions_polynomial)
+
+
