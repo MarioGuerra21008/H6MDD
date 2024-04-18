@@ -716,7 +716,7 @@ modelosvm<-svm(Clasificacion~., data = train, scale = F)
 # Asumiendo que 'Caras' es la variable respuesta y las otras dos son predictoras
 svmModel <- svm(Cara ~ Media + Economica, data = train_factor, type = "C-classification", kernel = "linear", cost = 1)
 
-svm_radial <- svm(Cara ~ Media + Economica, data = train, kernel = "radial", cost = 2^-5, gamma = 0.1)
+svm_radial <- svm(Cara ~ Media + Economica, data = train_factor, kernel = "radial", cost = 2^-5, gamma = 0.1)
 svm_polynomial <- svm(Cara ~ Media + Economica, data = train_factor, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
 
 #Inciso 5
@@ -737,4 +737,46 @@ predictions_polynomial <- predict(svm_polynomial, train_factor)  # Asegúrate qu
 # Mostrar las predicciones
 print(predictions_polynomial)
 
+
+# Inciso 6
+
+# Establecer una semilla para reproducibilidad
+set.seed(123)
+
+# Definir el tamaño del conjunto de prueba (por ejemplo, 20% de los datos)
+test_size <- floor(0.2 * nrow(train_factor))
+
+# Crear índices aleatorios para el conjunto de prueba
+test_indices <- sample(1:nrow(train_factor), size = test_size)
+
+# Dividir los datos en conjuntos de prueba y de entrenamiento
+test <- train_factor[test_indices, ]
+train <- train_factor[-test_indices, ]
+
+# Verificar las dimensiones de cada conjunto
+print(dim(train))
+print(dim(test))
+
+print(length(predictions_radial))
+print(length(real_values))
+
+
+# Inciso 7
+
+# Asumiendo que 'Cara' es la variable de respuesta en el conjunto de prueba
+real_values <- test$Cara
+
+
+predictions_radial <- predict(svm_radial, test)
+
+
+# Generar y mostrar la matriz de confusión para el modelo radial
+confusion_matrix_radial <- table(Predicted = predictions_radial, Actual = real_values)
+print("Confusion Matrix for Radial SVM:")
+print(confusion_matrix_radial)
+
+# Generar y mostrar la matriz de confusión para el modelo polinomial
+confusion_matrix_polynomial <- table(Predicted = predictions_polynomial, Actual = real_values)
+print("Confusion Matrix for Polynomial SVM:")
+print(confusion_matrix_polynomial)
 
