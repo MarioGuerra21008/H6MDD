@@ -632,11 +632,9 @@ print(paste("Regresión Logística:", precision_logistico))
 
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
-datos <- subset(datos, select = -Alley)
-
 # Identificar columnas cuantitativas y categóricas
 columnas_cuantitativas <- sapply(datos, is.numeric)
-columnas_categoricas <- sapply(datos, is.factor)
+columnas_categoricas <- sapply(datos, is.character)
 
 # Imputar valores faltantes en variables cuantitativas con 0
 datos[, columnas_cuantitativas][is.na(datos[, columnas_cuantitativas])] <- 0
