@@ -626,3 +626,27 @@ print(paste("Árbol de decisión:", precision_arbol))
 print(paste("Random Forest:", precision_rf))
 print(paste("Naive Bayes:", precision_nb))
 print(paste("Regresión Logística:", precision_logistico))
+
+
+### HOJA DE TRABAJO 7 - SVM
+
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+
+# Clasificar las casas en Económicas, Intermedias y Caras.
+
+# Definir cuartiles
+cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
+
+# Crear variable respuesta
+datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
+
+View(datos)
+
+porcentaje4 <- 0.70
+trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
+train<-datos[trainRowsNumber,]
+test<-datos[-trainRowsNumber,]
+set.seed(123)
+
+library(e1071)
+library(caret)
