@@ -673,36 +673,44 @@ print(paste("Regresión Logística:", precision_logistico))
 
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
+datos <- datos[, !names(datos) %in% "Id"]
+
 # Identificar columnas cuantitativas y categóricas
 columnas_cuantitativas <- sapply(datos, is.numeric)
 columnas_categoricas <- sapply(datos, is.character)
 
-# Imputar valores faltantes en variables cuantitativas con 0
-datos[, columnas_cuantitativas][is.na(datos[, columnas_cuantitativas])] <- 0
+# Seleccionar columnas cuantitativas y categóricas
+datos_cuantitativos <- datos[, columnas_cuantitativas]
+datos_categoricos <- datos[, columnas_categoricas]
 
-# Imputar valores faltantes en variables categóricas con "Desconocido"
-datos[, columnas_categoricas][is.na(datos[, columnas_categoricas])] <- "Desconocido"
+View(datos_cuantitativos)
+View(datos_categoricos)
+
+# Convertir columnas categóricas a factores
+datos_categoricos <- lapply(datos_categoricos, as.factor)
+
+datos_cuantitativos <- datos_cuantitativos[complete.cases(datos_cuantitativos),]
+
+datos_cuantitativos <- data.frame(datos_cuantitativos)
 
 # Clasificar las casas en Económicas, Intermedias y Caras.
 
 # Definir cuartiles
-cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
+cuartiles <- quantile(datos_cuantitativos$SalePrice, probs = c(0.25, 0.5, 0.75))
 
 # Crear variable respuesta
-datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
-datos$Clasificacion <- as.factor(datos$Clasificacion)
-View(datos)
+datos_cuantitativos$Clasificacion <- cut(datos_cuantitativos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos_cuantitativos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
+datos_cuantitativos$Clasificacion <- as.factor(datos_cuantitativos$Clasificacion)
+View(datos_cuantitativos)
 
 porcentaje4 <- 0.70
-trainRowsNumber<-sample(1:nrow(datos),porcentaje4*nrow(datos))
-train<-datos[trainRowsNumber,]
-test<-datos[-trainRowsNumber,]
+trainRowsNumber<-sample(1:nrow(datos_cuantitativos),porcentaje4*nrow(datos_cuantitativos))
+train<-datos_cuantitativos[trainRowsNumber,]
+test<-datos_cuantitativos[-trainRowsNumber,]
 set.seed(123)
 
-train <- as.data.frame(lapply(train, as.factor))
-test <- as.data.frame(lapply(test, as.factor))
-
 View(train)
+View(test)
 
 library(e1071)
 library(caret)
@@ -713,26 +721,25 @@ library(lattice)
 
 modelosvm<-svm(Clasificacion~., data = train, scale = F)
 
-# Asumiendo que 'Caras' es la variable respuesta y las otras dos son predictoras
-svmModel <- svm(Cara ~ Media + Economica, data = train_factor, type = "C-classification", kernel = "linear", cost = 1)
+svmModel <- svm(Clasificacion~., data = train, type = "C-classification", kernel = "linear", cost = 1)
 
-svm_radial <- svm(Cara ~ Media + Economica, data = train_factor, kernel = "radial", cost = 2^-5, gamma = 0.1)
-svm_polynomial <- svm(Cara ~ Media + Economica, data = train_factor, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
+svm_radial <- svm(Clasificacion~., data = train, kernel = "radial", cost = 2^-5, gamma = 0.1)
+
+svm_polynomial <- svm(Clasificacion~., data = train, kernel = "polynomial", cost = 1, gamma = 0.1, degree = 2)
 
 #Inciso 5
 
+predictions_linear <- predict(svmModel, newdata=test)
+print(predictions_linear)
 
-predictions_linear <- predict(svmModel, train_factor)
-
-                      
 # Asumiendo que 'test' es tu conjunto de datos de prueba y que contiene las columnas necesarias
-predictions_radial <- predict(svm_radial, train_factor)
+predictions_radial <- predict(svm_radial, newdata=test)
 
 # Mostrar las predicciones
 print(predictions_radial)
 
 # Asumiendo que 'test_factor' es tu conjunto de datos de prueba y que contiene las columnas necesarias
-predictions_polynomial <- predict(svm_polynomial, train_factor)  # Asegúrate que 'test_factor' tenga la misma estructura que 'train_factor'
+predictions_polynomial <- predict(svm_polynomial, newdata=test)  # Asegúrate que 'test_factor' tenga la misma estructura que 'train_factor'
 
 # Mostrar las predicciones
 print(predictions_polynomial)
@@ -740,43 +747,56 @@ print(predictions_polynomial)
 
 # Inciso 6
 
-# Establecer una semilla para reproducibilidad
-set.seed(123)
+# Para el modelo SVM lineal
+confusion_linear <- confusionMatrix(predictions_linear, test$Clasificacion)
 
-# Definir el tamaño del conjunto de prueba (por ejemplo, 20% de los datos)
-test_size <- floor(0.2 * nrow(train_factor))
+# Para el modelo SVM radial
+confusion_radial <- confusionMatrix(predictions_radial, test$Clasificacion)
 
-# Crear índices aleatorios para el conjunto de prueba
-test_indices <- sample(1:nrow(train_factor), size = test_size)
+# Para el modelo SVM polinomial
+confusion_polynomial <- confusionMatrix(predictions_polynomial, test$Clasificacion)
 
-# Dividir los datos en conjuntos de prueba y de entrenamiento
-test <- train_factor[test_indices, ]
-train <- train_factor[-test_indices, ]
+# Para el modelo SVM lineal
+print("Matriz de Confusión - SVM Lineal:")
+print(confusion_linear)
 
-# Verificar las dimensiones de cada conjunto
-print(dim(train))
-print(dim(test))
+# Para el modelo SVM radial
+print("Matriz de Confusión - SVM Radial:")
+print(confusion_radial)
 
-print(length(predictions_radial))
-print(length(real_values))
-
+# Para el modelo SVM polinomial
+print("Matriz de Confusión - SVM Polinomial:")
+print(confusion_polynomial)
 
 # Inciso 7
 
-# Asumiendo que 'Cara' es la variable de respuesta en el conjunto de prueba
-real_values <- test$Cara
+# Calcular la precisión en los datos de entrenamiento
+precision_entrenamiento_linear <- sum(predict(svmModel, newdata = train) == train$Clasificacion) / nrow(train)
+precision_entrenamiento_radial <- sum(predict(svm_radial, newdata = train) == train$Clasificacion) / nrow(train)
+precision_entrenamiento_polynomial <- sum(predict(svm_polynomial, newdata = train) == train$Clasificacion) / nrow(train)
 
+# Calcular la precisión en los datos de prueba
+precision_prueba_linear <- sum(predictions_linear == test$Clasificacion) / nrow(test)
+precision_prueba_radial <- sum(predictions_radial == test$Clasificacion) / nrow(test)
+precision_prueba_polynomial <- sum(predictions_polynomial == test$Clasificacion) / nrow(test)
 
-predictions_radial <- predict(svm_radial, test)
+# Comparar la precisión entre los datos de entrenamiento y prueba
+diferencia_linear <- abs(precision_entrenamiento_linear - precision_prueba_linear)
+diferencia_radial <- abs(precision_entrenamiento_radial - precision_prueba_radial)
+diferencia_polynomial <- abs(precision_entrenamiento_polynomial - precision_prueba_polynomial)
 
+# Imprimir los resultados
+print("Análisis de Sobreajuste o Desajuste:")
+print(paste("SVM Lineal - Diferencia entre precisión de entrenamiento y prueba:", diferencia_linear))
+print(paste("SVM Radial - Diferencia entre precisión de entrenamiento y prueba:", diferencia_radial))
+print(paste("SVM Polinomial - Diferencia entre precisión de entrenamiento y prueba:", diferencia_polynomial))
 
-# Generar y mostrar la matriz de confusión para el modelo radial
-confusion_matrix_radial <- table(Predicted = predictions_radial, Actual = real_values)
-print("Confusion Matrix for Radial SVM:")
-print(confusion_matrix_radial)
+# Inciso 8
 
-# Generar y mostrar la matriz de confusión para el modelo polinomial
-confusion_matrix_polynomial <- table(Predicted = predictions_polynomial, Actual = real_values)
-print("Confusion Matrix for Polynomial SVM:")
-print(confusion_matrix_polynomial)
+# Inciso 9
 
+# Inciso 10
+
+# Inciso 11
+
+# Inciso 12
