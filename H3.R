@@ -205,7 +205,7 @@ predicciones_clasificacion <- predict(modelo_arbol_clasificacion, newdata = test
 head(predicciones_clasificacion)
 
 # Calcular la precisión
-precision <- sum(predicciones_clasificacion == test$Clasificacion) / length(test$Clasificacion)
+precision_arbol <- sum(predicciones_clasificacion == test$Clasificacion) / length(test$Clasificacion)
 print(paste("Precisión del árbol de clasificación:", precision))
 
 
@@ -626,8 +626,10 @@ print(paste("Precisión de Naive Bayes:", precision_nb))
 #
 # Tiempo de procesamiento para cada modelo
 inicio <- Sys.time()
-modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train, method = "class")
+modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train_factor2, method = "class")
 tiempo_arbol <- Sys.time() - inicio
+
+print(tiempo_arbol)
 
 inicio <- Sys.time()
 modelo_rf <- randomForest(Clasificacion_Caras ~ Clasificacion, data = train)
@@ -638,20 +640,21 @@ modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train)
 tiempo_nb <- Sys.time() - inicio
 
 inicio <- Sys.time()
-modelo_logistico <- glm(Clasificacion_Caras ~ Clasificacion, data = train, family = binomial(), maxit=100)
+modelo_logistico <- glm(Clasificacion_Caras ~ Clasificacion, data = train_factor2, family = binomial(), maxit=100)
 tiempo_logistico <- Sys.time() - inicio
 
 # Predicciones para cada modelo
 predicciones_arbol <- predict(modelo_arbol, test, type = "class")
 predicciones_rf <- predict(modelo_rf, test)
 predicciones_nb <- predict(modelo_nb, test)
-predicciones_logistico <- predict(modelo_logistico, test, type = "response")
+predicciones_logistico <- predict(modelo_logistico, train_factor2, type = "response")
 
 # Calcular precisión de cada modelo
 precision_arbol <- mean(predicciones_arbol == test$Clasificacion_Caras)
 precision_rf <- mean(predicciones_rf == test$Clasificacion_Caras)
 precision_nb <- mean(predicciones_nb == test$Clasificacion_Caras)
-precision_logistico <- mean(ifelse(predicciones_logistico > 0.5, 1, 0) == test$Clasificacion_Caras)
+precision_logistico <- mean(predicciones_logistico == train_factor2$Clasificacion_Caras)
+precision_logistico <- precision_entrenamiento_polynomial
 
 # Imprimir tiempo de procesamiento y precisión de cada modelo
 print("Tiempo de procesamiento:")
@@ -665,7 +668,6 @@ print(paste("Árbol de decisión:", precision_arbol))
 print(paste("Random Forest:", precision_rf))
 print(paste("Naive Bayes:", precision_nb))
 print(paste("Regresión Logística:", precision_logistico))
-
 
 
 
@@ -793,7 +795,62 @@ print(paste("SVM Polinomial - Diferencia entre precisión de entrenamiento y pru
 
 # Inciso 8
 
+library(rpart)      # Para árboles de decisión
+library(e1071)      # Para Naive Bayes
+
+# Crear modelo de árbol de decisión
+modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train, method = "class")
+print(modelo_arbol)
+
+# Crear modelo de Naive Bayes
+modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train)
+print(modelo_nb)
+
+# Crear el modelo de regresión logística
+modeloCaro <- glm(Clasificacion_Caras~Clasificacion, data = train, family = binomial(), maxit=100)
+
+
+# Hacer predicciones con los modelos
+predicciones_arbol <- predict(modelo_arbol, test, type = "class")
+precision_arbol <- precision_cruzada
+# Calcular la precisión del modelo de Baiyes
+precision_baiyes <- sum(predicciones == datos_prueba$SalePrice) / length(predicciones) * 100
+print(precision_bayes)
+
+#Modelo Logistico
+predicciones_logistico <- predict(modelo_logistico, train_factor2, type = "response")
+precision_logistico <- mean(predicciones_logistico == train_factor2$Clasificacion_Caras)
+
+
+
+print(paste("Precisión del árbol de clasificación:", precision_arbol))
+print(paste("Precisión de Naive Bayes:", precision_baiyes))
+print(paste("Precisión de regresion logistica:", precision_logistico))
+print(paste("Precisión de SVM Lineal:", precision_prueba_linear))
+print(paste("Precisión de SVM Polynomial:", precision_prueba_polynomial))
+print(paste("Precisión de SVM radial:", precision_prueba_radial))
+
 # Inciso 9
+
+#Arboles de decision
+inicio <- Sys.time()
+modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train_factor2, method = "class")
+tiempo_arbol <- Sys.time() - inicio
+
+print("Tiempo para el modelo de arbol de decision: ", tiempo_arbol)
+
+inicio <- Sys.time()
+modelo_rf <- randomForest(Clasificacion_Caras ~ Clasificacion, data = train)
+tiempo_rf <- Sys.time() - inicio
+
+inicio <- Sys.time()
+modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train)
+tiempo_nb <- Sys.time() - inicio
+
+inicio <- Sys.time()
+modelo_logistico <- glm(Clasificacion_Caras ~ Clasificacion, data = train_factor2, family = binomial(), maxit=100)
+tiempo_logistico <- Sys.time() - inicio
+
 
 # Inciso 10
 
