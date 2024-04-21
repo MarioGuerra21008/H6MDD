@@ -837,22 +837,68 @@ inicio <- Sys.time()
 modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train_factor2, method = "class")
 tiempo_arbol <- Sys.time() - inicio
 
-print("Tiempo para el modelo de arbol de decision: ", tiempo_arbol)
+print(paste("Tiempo para el modelo de arbol de decision: ", tiempo_arbol))
 
+#Random Forest
 inicio <- Sys.time()
-modelo_rf <- randomForest(Clasificacion_Caras ~ Clasificacion, data = train)
+modelo_rf <- randomForest(Clasificacion_Caras ~ Clasificacion, data = train_factor2)
 tiempo_rf <- Sys.time() - inicio
 
+print(paste("Tiempo para el modelo Random Forest: ", tiempo_rf))
+
+#Naive Bayes
 inicio <- Sys.time()
-modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train)
+modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train_factor2)
 tiempo_nb <- Sys.time() - inicio
 
+print(paste("Tiempo para el modelo Naive Bayes: ", tiempo_nb))
+
+#Modelo SVM
 inicio <- Sys.time()
-modelo_logistico <- glm(Clasificacion_Caras ~ Clasificacion, data = train_factor2, family = binomial(), maxit=100)
-tiempo_logistico <- Sys.time() - inicio
+svmModel <- svm(Clasificacion_Caras~ Clasificacion, data = train_factor2, type = "C-classification", kernel = "linear", cost = 1)
+tiempo_svm <- Sys.time() - inicio
+print(paste("Tiempo para el modelo SVM: ", tiempo_svm))
+
 
 
 # Inciso 10
+
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+
+datos <- datos[, !names(datos) %in% "Id"]
+
+# Identificar columnas cuantitativas y categóricas
+columnas_cuantitativas <- sapply(datos, is.numeric)
+columnas_categoricas <- sapply(datos, is.character)
+
+# Convertir columnas categóricas a factores
+datos_categoricos <- lapply(datos_categoricos, as.factor)
+
+datos_cuantitativos <- datos_cuantitativos[complete.cases(datos_cuantitativos),]
+
+datos_cuantitativos <- data.frame(datos_cuantitativos)
+
+train<-datos_cuantitativos[trainRowsNumber,]
+
+# Entrenar el modelo de regresión lineal
+modelo_regresion <- lm(SalePrice ~ ., data = train)
+
+
+# Evaluación del modelo
+summary(modelo_regresion)
+
+# Validación del modelo
+predicciones_regresion <- predict(modelo_regresion, newdata = test_data)
+print(predicciones_regresion)
+predicciones_regresion <- na.omit(predicciones_regresion)
+mse <- mean((test_data$SalePrice - predicciones_regresion)^2)
+
+#test_data_clean <- na.omit(test_data)
+#predicciones_regresion_clean <- predicciones_regresion[!is.na(test_data$SalePrice)]
+
+print(paste("Error cuadrático medio (MSE):", mse))
+
+
 
 # Inciso 11
 
