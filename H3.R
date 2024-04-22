@@ -902,4 +902,33 @@ print(paste("Error cuadrático medio (MSE):", mse))
 
 # Inciso 11
 
+# Carga de paquetes necesarios
+library(MASS) # Para la función lda
+library(caret) # Para la función trainControl
+library(glmnet) # Para la función cv.glmnet
+
+
+# Predicciones de los modelos lineales
+pred_single <- predict(single_linear_model, newdata = test)
+pred_multiple <- predict(multiple_linear_model, newdata = test)
+
+# Predicciones del modelo logístico
+pred_logistic <- predict(modeloCaro, newdata = test, type = "response")
+
+# Calcula el error cuadrático medio (MSE) para cada modelo
+mse_single <- mean((test$SalePrice - pred_single)^2)
+mse_multiple <- mean((test$SalePrice - pred_multiple)^2)
+mse_logistic <- mean((test$Clasificacion_Caras - pred_logistic)^2)
+
+# Muestra los resultados
+print("MSE del modelo lineal singular:")
+print(mse_single)
+print("MSE del modelo lineal múltiple:")
+print(mse_multiple)
+print("MSE del modelo logístico:")
+print(mse_logistic)
+
+
+
+
 # Inciso 12
