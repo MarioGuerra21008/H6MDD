@@ -938,7 +938,6 @@ print(mse_logistic)
 
 
 # Hoja de trabajo 8
-# inciso 3
 
 # Leer los datos
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
@@ -957,18 +956,29 @@ datos$Clasificacion <- as.factor(datos$Clasificacion)
 
 # Cargar la biblioteca
 library(caret)
+library(ggplot2)
+library(lattice)
 
 # Dividir los datos en conjunto de entrenamiento y prueba
 set.seed(123)
-indices_entrenamiento <- sample(1:nrow(datos), 0.8 * nrow(datos))
+indices_entrenamiento <- sample(1:nrow(datos), 0.7 * nrow(datos))
 datos_entrenamiento <- datos[indices_entrenamiento, ]
 datos_prueba <- datos[-indices_entrenamiento, ]
 
 # Imputar valores faltantes con la mediana para las variables numéricas
 datos_imputados <- datos_entrenamiento
+# Imputar valores faltantes con la mediana para las variables numéricas
 for (i in 1:ncol(datos_imputados)) {
   if (is.numeric(datos_imputados[, i])) {
     datos_imputados[is.na(datos_imputados[, i]), i] <- median(datos_imputados[, i], na.rm = TRUE)
+  }
+}
+
+# Imputar valores faltantes con la moda para las variables de tipo character
+for (i in 1:ncol(datos_imputados)) {
+  if (is.character(datos_imputados[, i])) {
+    moda <- names(sort(table(datos_imputados[, i]), decreasing = TRUE)[1])
+    datos_imputados[is.na(datos_imputados[, i]), i] <- moda
   }
 }
 
@@ -980,10 +990,12 @@ modelo1_caret <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet
 # Hacer predicciones con modelo 1
 predicciones_modelo1_caret <- predict(modelo1_caret, newdata = datos_prueba)
 
+print(predicciones_modelo1_caret)
+
 # Calcular la matriz de confusión para modelo 1
 cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Clasificacion)
 
-cfm_modelo1_caret
+print(cfm_modelo1_caret)
 
 # Ajustar modelo 2
 modelo2_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet", trace = FALSE)
@@ -994,5 +1006,5 @@ predicciones_modelo2_caret <- predict(modelo2_caret, newdata = datos_prueba)
 # Calcular la matriz de confusión para modelo 2
 cfm_modelo2_caret <- confusionMatrix(predicciones_modelo2_caret, datos_prueba$Clasificacion)
 
-cfm_modelo2_caret
+print(cfm_modelo2_caret)
 
