@@ -932,3 +932,22 @@ print(mse_logistic)
 
 
 # Inciso 12
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Hoja de trabajo 8
+#inciso 3
+
+
+
+
