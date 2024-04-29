@@ -937,17 +937,62 @@ print(mse_logistic)
 
 
 
-
-
-
-
-
-
-
-
 # Hoja de trabajo 8
-#inciso 3
+# inciso 3
 
+# Leer los datos
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
+# Definir cuartiles
+cuartiles <- quantile(datos$SalePrice, probs = c(0.25, 0.5, 0.75))
 
+# Crear variable respuesta
+datos$Clasificacion <- cut(datos$SalePrice, breaks = c(0, cuartiles[2], cuartiles[3], max(datos$SalePrice)), labels = c("Económicas", "Intermedias", "Caras"))
+
+# Eliminar variables constantes
+datos <- datos[, apply(datos, 2, function(x) length(unique(x)) > 1)]
+
+# Convertir la variable de respuesta en un factor
+datos$Clasificacion <- as.factor(datos$Clasificacion)
+
+# Cargar la biblioteca
+library(caret)
+
+# Dividir los datos en conjunto de entrenamiento y prueba
+set.seed(123)
+indices_entrenamiento <- sample(1:nrow(datos), 0.8 * nrow(datos))
+datos_entrenamiento <- datos[indices_entrenamiento, ]
+datos_prueba <- datos[-indices_entrenamiento, ]
+
+# Imputar valores faltantes con la mediana para las variables numéricas
+datos_imputados <- datos_entrenamiento
+for (i in 1:ncol(datos_imputados)) {
+  if (is.numeric(datos_imputados[, i])) {
+    datos_imputados[is.na(datos_imputados[, i]), i] <- median(datos_imputados[, i], na.rm = TRUE)
+  }
+}
+
+View(datos_imputados)
+
+# Ajustar modelo 1 con datos imputados
+modelo1_caret <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet")
+
+# Hacer predicciones con modelo 1
+predicciones_modelo1_caret <- predict(modelo1_caret, newdata = datos_prueba)
+
+# Calcular la matriz de confusión para modelo 1
+cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Clasificacion)
+
+cfm_modelo1_caret
+
+# Ajustar modelo 2
+modelo2_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet", trace = FALSE)
+
+# Hacer predicciones con modelo 2
+predicciones_modelo2_caret <- predict(modelo2_caret, newdata = datos_prueba)
+
+# Calcular la matriz de confusión para modelo 2
+cfm_modelo2_caret <- confusionMatrix(predicciones_modelo2_caret, datos_prueba$Clasificacion)
+
+cfm_modelo2_caret
 
