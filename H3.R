@@ -959,14 +959,8 @@ library(caret)
 library(ggplot2)
 library(lattice)
 
-# Dividir los datos en conjunto de entrenamiento y prueba
-set.seed(123)
-indices_entrenamiento <- sample(1:nrow(datos), 0.7 * nrow(datos))
-datos_entrenamiento <- datos[indices_entrenamiento, ]
-datos_prueba <- datos[-indices_entrenamiento, ]
-
 # Imputar valores faltantes con la mediana para las variables numéricas
-datos_imputados <- datos_entrenamiento
+datos_imputados <- datos
 # Imputar valores faltantes con la mediana para las variables numéricas
 for (i in 1:ncol(datos_imputados)) {
   if (is.numeric(datos_imputados[, i])) {
@@ -984,24 +978,32 @@ for (i in 1:ncol(datos_imputados)) {
 
 View(datos_imputados)
 
+# Dividir los datos en conjunto de entrenamiento y prueba
+set.seed(123)
+indices_entrenamiento <- sample(1:nrow(datos_imputados), 0.7 * nrow(datos_imputados))
+datos_entrenamiento <- datos_imputados[indices_entrenamiento, ]
+datos_prueba <- datos_imputados[-indices_entrenamiento, ]
+
 # Ajustar modelo 1 con datos imputados
-modelo1_caret <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet")
+modelo1_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet")
+
+# Ajustar modelo 2
+modelo2_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet", trace = FALSE)
 
 # Hacer predicciones con modelo 1
-predicciones_modelo1_caret <- predict(modelo1_caret, newdata = datos_prueba)
+predicciones_modelo1_caret <- predict(modelo1_caret, newdata=datos_prueba)
 
 print(predicciones_modelo1_caret)
+
+# Hacer predicciones con modelo 2
+predicciones_modelo2_caret <- predict(modelo2_caret, newdata=datos_prueba)
+
+print(predicciones_modelo2_caret)
 
 # Calcular la matriz de confusión para modelo 1
 cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Clasificacion)
 
 print(cfm_modelo1_caret)
-
-# Ajustar modelo 2
-modelo2_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet", trace = FALSE)
-
-# Hacer predicciones con modelo 2
-predicciones_modelo2_caret <- predict(modelo2_caret, newdata = datos_prueba)
 
 # Calcular la matriz de confusión para modelo 2
 cfm_modelo2_caret <- confusionMatrix(predicciones_modelo2_caret, datos_prueba$Clasificacion)
