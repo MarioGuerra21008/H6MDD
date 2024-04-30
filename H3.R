@@ -958,6 +958,7 @@ datos$Clasificacion <- as.factor(datos$Clasificacion)
 library(caret)
 library(ggplot2)
 library(lattice)
+library(nnet)
 
 # Imputar valores faltantes con la mediana para las variables numéricas
 datos_imputados <- datos
@@ -968,9 +969,9 @@ for (i in 1:ncol(datos_imputados)) {
   }
 }
 
-# Imputar valores faltantes con la moda para las variables de tipo character
+# Imputar valores faltantes con la moda para las variables de tipo character y factor
 for (i in 1:ncol(datos_imputados)) {
-  if (is.character(datos_imputados[, i])) {
+  if (is.character(datos_imputados[, i]) || is.factor(datos_imputados[, i])) {
     moda <- names(sort(table(datos_imputados[, i]), decreasing = TRUE)[1])
     datos_imputados[is.na(datos_imputados[, i]), i] <- moda
   }
@@ -985,20 +986,27 @@ datos_entrenamiento <- datos_imputados[indices_entrenamiento, ]
 datos_prueba <- datos_imputados[-indices_entrenamiento, ]
 
 # Ajustar modelo 1 con datos imputados
-modelo1_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet")
+modelo1_caret <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet")
 
-# Ajustar modelo 2
-modelo2_caret <- train(Clasificacion ~ ., data = datos_entrenamiento, method = "nnet", trace = FALSE)
+#Modelo 2 con Neuralnet
+modelo2_nnet <- nnet(Clasificacion ~ ., data = datos_imputados, size = 10, MaxNWts = 10000, linout = FALSE, trace = FALSE)
 
 # Hacer predicciones con modelo 1
 predicciones_modelo1_caret <- predict(modelo1_caret, newdata=datos_prueba)
 
 print(predicciones_modelo1_caret)
 
-# Hacer predicciones con modelo 2
-predicciones_modelo2_caret <- predict(modelo2_caret, newdata=datos_prueba)
+# Asegurarse de que las variables categóricas tengan los mismos niveles en los datos de entrenamiento y prueba
+for (i in 1:ncol(datos_prueba)) {
+  if (is.factor(datos_prueba[, i]) || is.character(datos_prueba[, i])) {
+    levels(datos_prueba[, i]) <- union(levels(datos_imputados[, i]), levels(datos_prueba[, i]))
+  }
+}
 
-print(predicciones_modelo2_caret)
+# Hacer predicciones con modelo 2
+predicciones_modelo2_nnet <- predict(modelo2_nnet, newdata=datos_prueba, type = "class")
+
+print(predicciones_modelo2_nnet)
 
 # Calcular la matriz de confusión para modelo 1
 cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Clasificacion)
@@ -1006,7 +1014,7 @@ cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Cl
 print(cfm_modelo1_caret)
 
 # Calcular la matriz de confusión para modelo 2
-cfm_modelo2_caret <- confusionMatrix(predicciones_modelo2_caret, datos_prueba$Clasificacion)
+cfm_modelo2_nnet <- confusionMatrix(as.factor(predicciones_modelo2_nnet), datos_prueba$Clasificacion)
 
-print(cfm_modelo2_caret)
+print(cfm_modelo2_nnet)
 
