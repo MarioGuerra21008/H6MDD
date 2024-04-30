@@ -928,16 +928,11 @@ print(mse_multiple)
 print("MSE del modelo logístico:")
 print(mse_logistic)
 
+#
+# Hoja de Trabajo 8 - Redes Neuronales
+#
 
-
-
-# Inciso 12
-
-
-
-
-
-# Hoja de trabajo 8
+#Incisos 1 y 2
 
 # Leer los datos
 datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
@@ -985,11 +980,15 @@ indices_entrenamiento <- sample(1:nrow(datos_imputados), 0.7 * nrow(datos_imputa
 datos_entrenamiento <- datos_imputados[indices_entrenamiento, ]
 datos_prueba <- datos_imputados[-indices_entrenamiento, ]
 
+# Inciso 3
+
 # Ajustar modelo 1 con datos imputados
 modelo1_caret <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet")
 
 #Modelo 2 con Neuralnet
 modelo2_nnet <- nnet(Clasificacion ~ ., data = datos_imputados, size = 10, MaxNWts = 10000, linout = FALSE, trace = FALSE)
+
+#Inciso 4
 
 # Hacer predicciones con modelo 1
 predicciones_modelo1_caret <- predict(modelo1_caret, newdata=datos_prueba)
@@ -1008,6 +1007,8 @@ predicciones_modelo2_nnet <- predict(modelo2_nnet, newdata=datos_prueba, type = 
 
 print(predicciones_modelo2_nnet)
 
+# Inciso 5
+
 # Calcular la matriz de confusión para modelo 1
 cfm_modelo1_caret <- confusionMatrix(predicciones_modelo1_caret, datos_prueba$Clasificacion)
 
@@ -1018,3 +1019,111 @@ cfm_modelo2_nnet <- confusionMatrix(as.factor(predicciones_modelo2_nnet), datos_
 
 print(cfm_modelo2_nnet)
 
+
+#Inciso 6
+
+# Obtener tiempos de procesamiento de los modelos
+tiempo_modelo1 <- modelo1_caret$times$everything
+tiempo_modelo2 <- system.time(nnet(Clasificacion ~ ., data = datos_imputados, size = 10, MaxNWts = 10000, linout = FALSE, trace = FALSE))
+
+print("Tiempo de Procesamiento - Modelo 1:")
+print(tiempo_modelo1)
+print("Tiempo de Procesamiento - Modelo 2:")
+print(tiempo_modelo2)
+
+# Imprimir matrices de confusión
+print("Matriz de Confusión - Modelo 1:")
+print(cfm_modelo1_caret$table)
+print("Matriz de Confusión - Modelo 2:")
+print(cfm_modelo2_nnet$table)
+
+#Inciso 7
+
+# Definir el control de entrenamiento
+control_entrenamiento <- trainControl(method = "cv", number = 5)
+
+# Ajustar modelo 1 con validación cruzada
+modelo1_cv <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet", trControl = control_entrenamiento)
+
+# Evaluar desempeño en datos de entrenamiento
+predicciones_entrenamiento <- predict(modelo1_cv, datos_entrenamiento)
+confusionMatrix(predicciones_entrenamiento, datos_entrenamiento$Clasificacion)
+
+# Evaluar desempeño en datos de validación
+predicciones_validacion <- predict(modelo1_cv, datos_prueba)
+confusionMatrix(predicciones_validacion, datos_prueba$Clasificacion)
+
+# Ajustar modelo 2 con validación cruzada
+modelo2_cv <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet", trControl = control_entrenamiento)
+
+# Evaluar desempeño en datos de entrenamiento
+predicciones_entrenamiento_modelo2 <- predict(modelo2_cv, datos_entrenamiento)
+confusionMatrix(predicciones_entrenamiento_modelo2, datos_entrenamiento$Clasificacion)
+
+# Evaluar desempeño en datos de validación
+predicciones_validacion_modelo2 <- predict(modelo2_cv, datos_prueba)
+confusionMatrix(predicciones_validacion_modelo2, datos_prueba$Clasificacion)
+
+#Inciso 8
+
+# Definir la cuadrícula de parámetros
+grid <- expand.grid(size = c(1, 2, 4), decay = c(0.1, 0.01, 0.001))
+
+# Ajustar modelo 1 con tuning de parámetros
+modelo1_tuned <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet", trControl = control_entrenamiento, tuneGrid = grid)
+
+# Evaluar desempeño en datos de entrenamiento
+predicciones_entrenamiento_tuned <- predict(modelo1_tuned, datos_entrenamiento)
+confusionMatrix(predicciones_entrenamiento_tuned, datos_entrenamiento$Clasificacion)
+
+# Evaluar desempeño en datos de validación
+predicciones_validacion_tuned <- predict(modelo1_tuned, datos_prueba)
+confusionMatrix(predicciones_validacion_tuned, datos_prueba$Clasificacion)
+
+#Inciso 9
+
+# Leer los datos
+datos2 <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+
+# Imputar valores faltantes con la mediana para las variables numéricas
+datos_imputados2 <- datos2
+# Imputar valores faltantes con la mediana para las variables numéricas
+for (i in 1:ncol(datos_imputados2)) {
+  if (is.numeric(datos_imputados2[, i])) {
+    datos_imputados2[is.na(datos_imputados2[, i]), i] <- median(datos_imputados2[, i], na.rm = TRUE)
+  }
+}
+
+# Imputar valores faltantes con la moda para las variables de tipo character y factor
+for (i in 1:ncol(datos_imputados2)) {
+  if (is.character(datos_imputados2[, i]) || is.factor(datos_imputados2[, i])) {
+    moda <- names(sort(table(datos_imputados2[, i]), decreasing = TRUE)[1])
+    datos_imputados2[is.na(datos_imputados2[, i]), i] <- moda
+  }
+}
+
+View(datos_imputados2)
+
+# Dividir los datos en conjunto de entrenamiento y prueba
+set.seed(123)
+indices_entrenamiento <- sample(1:nrow(datos_imputados2), 0.7 * nrow(datos_imputados2))
+datos_entrenamiento2 <- datos_imputados2[indices_entrenamiento, ]
+datos_prueba2 <- datos_imputados2[-indices_entrenamiento, ]
+
+#Inciso 10
+
+#Inciso 11
+
+#Inciso 12
+
+#Inciso 13
+
+#Inciso 14
+
+#Inciso 15
+
+#Inciso 16
+
+#Inciso 17
+
+#Inciso 18
