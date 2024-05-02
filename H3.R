@@ -899,6 +899,44 @@ mse <- mean((test_data$SalePrice - predicciones_regresion)^2)
 print(paste("Error cuadrático medio (MSE):", mse))
 
 
+# Inciso 10
+
+datos <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
+
+datos <- datos[, !names(datos) %in% "Id"]
+
+# Identificar columnas cuantitativas y categóricas
+columnas_cuantitativas <- sapply(datos, is.numeric)
+columnas_categoricas <- sapply(datos, is.character)
+
+# Convertir columnas categóricas a factores
+datos_categoricos <- lapply(datos_categoricos, as.factor)
+
+datos_cuantitativos <- datos_cuantitativos[complete.cases(datos_cuantitativos),]
+
+datos_cuantitativos <- data.frame(datos_cuantitativos)
+
+train<-datos_cuantitativos[trainRowsNumber,]
+
+# Entrenar el modelo de regresión lineal
+modelo_regresion <- lm(SalePrice ~ ., data = train)
+
+
+# Evaluación del modelo
+summary(modelo_regresion)
+
+# Validación del modelo
+predicciones_regresion <- predict(modelo_regresion, newdata = test_data)
+print(predicciones_regresion)
+predicciones_regresion <- na.omit(predicciones_regresion)
+mse <- mean((test_data$SalePrice - predicciones_regresion)^2)
+
+#test_data_clean <- na.omit(test_data)
+#predicciones_regresion_clean <- predicciones_regresion[!is.na(test_data$SalePrice)]
+
+print(paste("Error cuadrático medio (MSE):", mse))
+
+
 
 # Inciso 11
 
@@ -927,6 +965,9 @@ print("MSE del modelo lineal múltiple:")
 print(mse_multiple)
 print("MSE del modelo logístico:")
 print(mse_logistic)
+
+
+
 
 #
 # Hoja de Trabajo 8 - Redes Neuronales
@@ -1082,6 +1123,8 @@ confusionMatrix(predicciones_validacion_tuned, datos_prueba$Clasificacion)
 
 #Inciso 9
 
+setwd('C:/Users/Alvar/OneDrive/Documentos/SemestreVII/MineriaDeDatos/H3MDD')
+
 # Leer los datos
 datos2 <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
 
@@ -1110,7 +1153,60 @@ indices_entrenamiento <- sample(1:nrow(datos_imputados2), 0.7 * nrow(datos_imput
 datos_entrenamiento2 <- datos_imputados2[indices_entrenamiento, ]
 datos_prueba2 <- datos_imputados2[-indices_entrenamiento, ]
 
+for (i in 1:ncol(datos_prueba2)) {
+  if (is.factor(datos_prueba2[, i])) {
+    datos_prueba2[, i] <- factor(datos_prueba2[, i], levels = levels(datos_entrenamiento2[, i]))
+  }
+}
+
 #Inciso 10
+
+
+library(nnet)
+library(caret)
+
+# Modelo 1: Una capa oculta con función de activación logística
+modelo_regresion_1 <- nnet(SalePrice ~ ., data = datos_imputados, size = 10, MaxNWts = 10000, linout = TRUE, trace = FALSE)
+
+# Modelo 2: Dos capas ocultas con función de activación tangente hiperbólica
+modelo_regresion_2 <-  train(Clasificacion ~ ., data = datos_imputados, method = "nnet", trControl = control_entrenamiento)
+
+
+
+# Obtener los niveles de las variables categóricas en los datos de entrenamiento
+niveles_entrenamiento <- lapply(datos_entrenamiento2[, sapply(datos_entrenamiento2, is.factor)], levels)
+
+# Asegurar que las variables categóricas en los datos de prueba tengan los mismos niveles que en los datos de entrenamiento
+for (i in seq_along(datos_prueba2)) {
+  if (is.factor(datos_prueba2[, i])) {
+    nombre_variable <- names(datos_prueba2)[i]
+    datos_prueba2[, i] <- factor(datos_prueba2[, i], levels = niveles_entrenamiento[[nombre_variable]])
+  }
+}
+
+# Realizar predicciones con el modelo 1 nuevamente
+predicciones_modelo_1 <- predict(modelo_regresion_1, newdata = datos_imputados)
+
+# Hacer predicciones en datos de prueba
+predicciones_modelo_2 <- predict(modelo_regresion_2, newdata = datos_prueba)
+
+# Evaluar el desempeño de los modelos
+# Por ejemplo, puedes calcular el RMSE
+rmse_modelo_1 <- sqrt(mean((predicciones_modelo_1 - datos_prueba2$SalePrice)^2))
+
+# Evaluar el desempeño del modelo en los datos de prueba
+confusion_matrix_modelo_2 <- confusionMatrix(predicciones_modelo_2, datos_prueba$Clasificacion)
+print(confusion_matrix_modelo_2)
+
+# Imprimir los resultados
+print("RMSE Modelo 1:")
+print(rmse_modelo_1)
+
+# Obtener detalles del modelo 2
+modelo_info <- getModelInfo("nnet")
+print(modelo_info)
+
+
 
 #Inciso 11
 
