@@ -1123,7 +1123,6 @@ confusionMatrix(predicciones_validacion_tuned, datos_prueba$Clasificacion)
 
 #Inciso 9
 
-setwd('C:/Users/Alvar/OneDrive/Documentos/SemestreVII/MineriaDeDatos/H3MDD')
 
 # Leer los datos
 datos2 <- read.csv("train.csv", header = TRUE, encoding = "UTF-8")
@@ -1207,10 +1206,80 @@ modelo_info <- getModelInfo("nnet")
 print(modelo_info)
 
 
-
 #Inciso 11
 
+rmse_modelo_1 <- sqrt(mean((predicciones_modelo_1 - datos_prueba$SalePrice)^2))
+
+# Imprimir los resultados
+print("RMSE Modelo 1:")
+print(rmse_modelo_1)
+print("RMSE Modelo 2:")
+print(confusion_matrix_modelo_2$overall["Accuracy"])
+
+# Determinar cuál modelo funcionó mejor
+if (rmse_modelo_1 < confusion_matrix_modelo_2$overall["Accuracy"]) {
+  print("El modelo 1 funcionó mejor para predecir el precio de las casas.")
+} else if (rmse_modelo_1 > confusion_matrix_modelo_2$overall["Accuracy"]) {
+  print("El modelo 2 funcionó mejor para predecir el precio de las casas.")
+} else {
+  print("Ambos modelos tuvieron un desempeño similar en la predicción del precio de las casas.")
+}
+
+
 #Inciso 12
+
+library(caret)
+library(ggplot2)
+
+# Función para calcular el RMSE
+calculate_rmse <- function(predictions, actual) {
+  return(sqrt(mean((predictions - actual)^2)))
+}
+
+# Definir los tamaños de conjunto de entrenamiento que se van a probar
+training_sizes <- c(0.5, 0.6, 0.7, 0.8, 0.9)
+
+# Almacenar los resultados del desempeño del modelo
+results <- data.frame(training_size = numeric(), rmse_train = numeric(), rmse_test = numeric())
+
+# Iterar sobre los tamaños de conjunto de entrenamiento
+for (size in training_sizes) {
+  # Dividir los datos en conjuntos de entrenamiento y prueba
+  indices <- createDataPartition(datos_imputados$SalePrice, p = size, list = FALSE)
+  train_data <- datos_imputados[indices, ]
+  test_data <- datos_imputados[-indices, ]
+  
+  # Entrenar el modelo en el conjunto de entrenamiento
+  modelo <- train(SalePrice ~ ., data = train_data, method = "nnet")
+  
+  # Hacer predicciones en el conjunto de entrenamiento
+  predictions_train <- predict(modelo, newdata = train_data)
+  # Calcular el RMSE en el conjunto de entrenamiento
+  rmse_train <- calculate_rmse(predictions_train, train_data$SalePrice)
+  
+  # Hacer predicciones en el conjunto de prueba
+  predictions_test <- predict(modelo, newdata = test_data)
+  # Calcular el RMSE en el conjunto de prueba
+  rmse_test <- calculate_rmse(predictions_test, test_data$SalePrice)
+  
+  # Almacenar los resultados
+  results <- rbind(results, data.frame(training_size = size, rmse_train = rmse_train, rmse_test = rmse_test))
+}
+
+
+# Normalizar los valores de RMSE
+results$rmse_train_normalized <- results$rmse_train / max(results$rmse_train)
+results$rmse_test_normalized <- results$rmse_test / max(results$rmse_test)
+
+# Graficar la curva de aprendizaje con valores de RMSE normalizados
+ggplot(results, aes(x = training_size)) +
+  geom_line(aes(y = rmse_train_normalized, color = "Train")) +
+  geom_line(aes(y = rmse_test_normalized, color = "Test")) +
+  scale_color_manual(values = c("Train" = "blue", "Test" = "red")) +
+  labs(x = "Tamaño del Conjunto de Entrenamiento", y = "RMSE (Normalized)", color = "Set") +
+  ggtitle("Curva de Aprendizaje")
+
+
 
 #Inciso 13
 
