@@ -799,8 +799,9 @@ library(rpart)      # Para árboles de decisión
 library(e1071)      # Para Naive Bayes
 
 # Crear modelo de árbol de decisión
-modelo_arbol <- rpart(Clasificacion_Caras ~ Clasificacion, data = train, method = "class")
+modelo_arbol <- rpart(Clasificacion$Caras ~ Clasificacion, data = train, method = "class")
 print(modelo_arbol)
+print(train_data$Clasificacion)
 
 # Crear modelo de Naive Bayes
 modelo_nb <- naiveBayes(Clasificacion_Caras ~ Clasificacion, data = train)
@@ -1281,9 +1282,110 @@ ggplot(results, aes(x = training_size)) +
 
 
 
-#Inciso 13
+#Inciso 13 
+
+library(caret)
+
+# Definir la cuadrícula de parámetros
+grid <- expand.grid(size = c(1, 2, 4), decay = c(0.1, 0.01, 0.001))
+
+# Ajustar modelo 1 con tuning de parámetros
+modelo1_tuned <- train(Clasificacion ~ ., data = datos_imputados, method = "nnet", trControl = control_entrenamiento, tuneGrid = grid)
+
+# Evaluar desempeño en datos de entrenamiento
+predicciones_entrenamiento_tuned <- predict(modelo1_tuned, datos_entrenamiento)
+confusionMatrix(predicciones_entrenamiento_tuned, datos_entrenamiento$Clasificacion)
+
+# Evaluar desempeño en datos de validación
+predicciones_validacion_tuned <- predict(modelo1_tuned, datos_prueba)
+confusionMatrix(predicciones_validacion_tuned, datos_prueba$Clasificacion)
+
 
 #Inciso 14
+
+library(nnet)
+library(caret)
+library(rpart)
+library(e1071)
+
+# Ajustar el mejor modelo de regresión neuronal
+tiempo_ajuste_neuronal <- system.time({
+  modelo_regresion_neuronal <- nnet(SalePrice ~ ., data = train_data, size = 10, MaxNWts = 10000, linout = TRUE, trace = FALSE)
+})
+
+# Hacer predicciones con el modelo de regresión neuronal
+tiempo_prediccion_neuronal <- system.time({
+  predicciones_neuronal <- predict(modelo_regresion_neuronal, newdata = train_data)
+})
+
+# Calcular la precisión del modelo de regresión neuronal
+precision_neuronal <- sqrt(mean((predicciones_neuronal - train_data$SalePrice)^2))
+
+# Crear modelo de árbol de decisión
+tiempo_ajuste_arbol <- system.time({
+  modelo_arbol <- rpart(SalePrice ~ ., data = train_data, method = "anova")
+})
+
+# Hacer predicciones con el modelo de árbol de decisión
+tiempo_prediccion_arbol <- system.time({
+  predicciones_arbol <- predict(modelo_arbol, newdata = train_data)
+})
+
+# Calcular la precisión del modelo de árbol de decisión
+precision_arbol <- sqrt(mean((predicciones_arbol - train_data$SalePrice)^2))
+
+# Crear modelo de Naive Bayes
+tiempo_ajuste_bayes <- system.time({
+  modelo_bayes <- naiveBayes(SalePrice ~ ., data = train_data)
+})
+
+# Hacer predicciones con el modelo de Naive Bayes
+tiempo_prediccion_bayes <- system.time({
+  predicciones_bayes <- predict(modelo_bayes, newdata = train_data)
+})
+
+# Calcular la precisión del modelo de Naive Bayes
+precision_bayes <- sqrt(mean((predicciones_bayes - train_data$SalePrice)^2))
+
+# Crear modelo de regresión logística
+tiempo_ajuste_logistico <- system.time({
+  modelo_logistico <- glm(SalePrice ~ ., data = train_data)
+})
+
+# Hacer predicciones con el modelo de regresión logística
+tiempo_prediccion_logistico <- system.time({
+  predicciones_logistico <- predict(modelo_logistico, newdata = train_data, type = "response")
+})
+
+# Calcular la precisión del modelo de regresión logística
+precision_logistico <- sqrt(mean((predicciones_logistico - train_data$SalePrice)^2))
+
+
+# Prints para el modelo de regresión neuronal
+print("Tiempo de ajuste del modelo de regresión neuronal:")
+print(tiempo_ajuste_neuronal)
+print("Tiempo de predicción del modelo de regresión neuronal:")
+print(tiempo_prediccion_neuronal)
+
+# Prints para el modelo de árbol de decisión
+print("Tiempo de ajuste del modelo de árbol de decisión:")
+print(tiempo_ajuste_arbol)
+print("Tiempo de predicción del modelo de árbol de decisión:")
+print(tiempo_prediccion_arbol)
+
+# Prints para el modelo de Naive Bayes
+print("Tiempo de ajuste del modelo de Naive Bayes:")
+print(tiempo_ajuste_bayes)
+print("Tiempo de predicción del modelo de Naive Bayes:")
+print(tiempo_prediccion_bayes)
+
+# Prints para el modelo de regresión logística
+print("Tiempo de ajuste del modelo de regresión logística:")
+print(tiempo_ajuste_logistico)
+print("Tiempo de predicción del modelo de regresión logística:")
+print(tiempo_prediccion_logistico)
+
+
 
 #Inciso 15
 
